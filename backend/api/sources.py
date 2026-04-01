@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.session import async_get_session
@@ -6,11 +6,14 @@ from backend.db.models import User
 from backend.db.schemas import (
     PlaybookTemplateRead,
     SubjectSourceRead, SubjectSourceCreate, SubjectSourceUpdate,
+    SubjectSourceRunRead, CollectResponse, CollectAllResponse,
 )
 from backend.db.tables.playbook_templates import PlaybookTemplatesTable
 from backend.db.tables.subject_sources import SubjectSourcesTable
+from backend.db.tables.subject_source_runs import SubjectSourceRunsTable
 from backend.db.tables.group_subjects import GroupSubjectsTable
 from backend.auth.users import current_active_user
+from backend.services.collection_runner import run_collection
 
 router_sources = APIRouter()
 
@@ -120,3 +123,101 @@ async def delete_source(
         raise HTTPException(status_code=404, detail="Source not found")
 
     await SubjectSourcesTable(session).soft_delete_source(source_id)
+
+
+# ── Collection Runs ──────────────────────────────────────────
+
+
+@router_sources.post(
+    "/subjects/{gsubject_id}/sources/{source_id}/collect",
+    response_model=CollectResponse,
+)
+async def collect_source(
+    gsubject_id: int,
+    source_id: int,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    """Trigger collection for a single source."""
+    _require_subjectmanager_or_above(user)
+    await _get_subject_or_404(session, gsubject_id, user)
+
+    source = await SubjectSourcesTable(session).get_by_id(source_id)
+    if source is None or source.deleted == 1 or source.gsubject_id != gsubject_id:
+        raise HTTPException(status_code=404, detail="Source not found")
+    if not source.enabled:
+        raise HTTPException(status_code=400, detail="Source is disabled")
+
+    background_tasks.add_task(run_collection, source_id)
+    return CollectResponse(run_id=0, status="started", message="Collection started")
+
+
+@router_sources.post(
+    "/subjects/{gsubject_id}/collect-all",
+    response_model=CollectAllResponse,
+)
+async def collect_all(
+    gsubject_id: int,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    """Trigger collection for all enabled sources of a subject."""
+    _require_subjectmanager_or_above(user)
+    await _get_subject_or_404(session, gsubject_id, user)
+
+    sources = await SubjectSourcesTable(session).get_enabled_by_subject(gsubject_id)
+    runs = []
+    for source in sources:
+        background_tasks.add_task(run_collection, source.source_id)
+        runs.append(CollectResponse(
+            run_id=0, status="started", message=f"Started: {source.category_name}"
+        ))
+
+    return CollectAllResponse(
+        runs=runs,
+        message=f"Started {len(runs)} collections",
+    )
+
+
+@router_sources.get(
+    "/subjects/{gsubject_id}/sources/{source_id}/runs",
+    response_model=list[SubjectSourceRunRead],
+)
+async def list_runs(
+    gsubject_id: int,
+    source_id: int,
+    limit: int = Query(10, ge=1, le=100),
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    """List recent collection runs for a source."""
+    await _get_subject_or_404(session, gsubject_id, user)
+
+    source = await SubjectSourcesTable(session).get_by_id(source_id)
+    if source is None or source.deleted == 1 or source.gsubject_id != gsubject_id:
+        raise HTTPException(status_code=404, detail="Source not found")
+
+    return await SubjectSourceRunsTable(session).get_by_source(source_id, limit=limit)
+
+
+@router_sources.get(
+    "/subjects/{gsubject_id}/sources/{source_id}/runs/{run_id}",
+    response_model=SubjectSourceRunRead,
+)
+async def get_run(
+    gsubject_id: int,
+    source_id: int,
+    run_id: int,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    """Get a specific collection run."""
+    await _get_subject_or_404(session, gsubject_id, user)
+
+    run = await SubjectSourceRunsTable(session).get_by_id(run_id)
+    if run is None or run.source_id != source_id:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    return run

@@ -20,6 +20,18 @@ class SubjectSourcesTable:
         )
         return result.scalars().all()
 
+    async def get_enabled_by_subject(self, gsubject_id: int) -> Sequence[SubjectSources]:
+        result = await self.session.execute(
+            select(SubjectSources)
+            .where(
+                SubjectSources.gsubject_id == gsubject_id,
+                SubjectSources.deleted == 0,
+                SubjectSources.enabled == True,
+            )
+            .order_by(SubjectSources.source_id)
+        )
+        return result.scalars().all()
+
     async def get_by_id(self, source_id: int) -> SubjectSources | None:
         result = await self.session.execute(
             select(SubjectSources).where(SubjectSources.source_id == source_id)

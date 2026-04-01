@@ -211,3 +211,31 @@ class SubjectSourceCreate(BaseModel):
     collection_config: dict = {}
     signal_instructions: str = ""
     user_inputs: dict = {}
+
+
+# ── Collection run schemas ────────────────────────────────────
+
+
+class SubjectSourceRunRead(BaseModel):
+    run_id: int
+    source_id: int
+    started_at: datetime
+    finished_at: datetime | None
+    status: str
+    items_collected: int
+    error_detail: str | None
+    data_hash: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class CollectResponse(BaseModel):
+    run_id: int
+    status: str
+    message: str
+
+
+class CollectAllResponse(BaseModel):
+    runs: list[CollectResponse]
+    message: str
