@@ -17,7 +17,7 @@ feedparser>=6.0.0
 crawl4ai>=0.4.0
 
 # AI Agent framework
-crewai[tools]>=0.121.0
+crewai[tools,anthropic]>=0.121.0
 
 # Testing
 pytest>=8.0.0
