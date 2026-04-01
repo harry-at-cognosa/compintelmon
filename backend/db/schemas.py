@@ -239,3 +239,11 @@ class CollectResponse(BaseModel):
 class CollectAllResponse(BaseModel):
     runs: list[CollectResponse]
     message: str
+
+
+# ── Discovery schemas ─────────────────────────────────────────
+
+
+class DiscoverResponse(BaseModel):
+    status: str
+    message: str

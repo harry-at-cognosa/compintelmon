@@ -7,13 +7,16 @@ from backend.db.schemas import (
     PlaybookTemplateRead,
     SubjectSourceRead, SubjectSourceCreate, SubjectSourceUpdate,
     SubjectSourceRunRead, CollectResponse, CollectAllResponse,
+    DiscoverResponse,
 )
 from backend.db.tables.playbook_templates import PlaybookTemplatesTable
 from backend.db.tables.subject_sources import SubjectSourcesTable
 from backend.db.tables.subject_source_runs import SubjectSourceRunsTable
 from backend.db.tables.group_subjects import GroupSubjectsTable
 from backend.auth.users import current_active_user
+from backend.config import ANTHROPIC_API_KEY
 from backend.services.collection_runner import run_collection
+from backend.services.discovery_runner import run_discovery
 
 router_sources = APIRouter()
 
@@ -179,6 +182,27 @@ async def collect_all(
         runs=runs,
         message=f"Started {len(runs)} collections",
     )
+
+
+@router_sources.post(
+    "/subjects/{gsubject_id}/discover",
+    response_model=DiscoverResponse,
+)
+async def discover_sources(
+    gsubject_id: int,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    """Trigger auto-discovery of source URLs for a subject using CrewAI."""
+    _require_subjectmanager_or_above(user)
+    await _get_subject_or_404(session, gsubject_id, user)
+
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY not configured in .env")
+
+    background_tasks.add_task(run_discovery, gsubject_id)
+    return DiscoverResponse(status="started", message="Auto-discovery started")
 
 
 @router_sources.get(

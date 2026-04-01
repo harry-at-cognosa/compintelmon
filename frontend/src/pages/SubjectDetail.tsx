@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Table, Badge, Form, Button, Spinner, Collapse } from "react-bootstrap";
-import { ArrowLeft, PlayCircle, CollectionPlay } from "react-bootstrap-icons";
+import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill } from "react-bootstrap-icons";
 import axiosClient from "../api/axiosClient";
 import { useAuthStore } from "../stores/useAuthStore";
 
@@ -10,6 +10,7 @@ interface Subject {
   gsubject_name: string;
   gsubject_type: string;
   gsubject_status: string;
+  gsubject_status_text: string;
   enabled: boolean;
 }
 
@@ -25,6 +26,7 @@ interface Source {
   last_status: string;
   last_collected_at: string | null;
   last_status_text: string;
+  user_inputs: Record<string, string>;
 }
 
 interface SourceRun {
@@ -78,6 +80,8 @@ export default function SubjectDetail() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   const [collecting, setCollecting] = useState(false);
+  const [discovering, setDiscovering] = useState(false);
+  const discoverPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [collectingSources, setCollectingSources] = useState<Set<number>>(new Set());
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
   const [runs, setRuns] = useState<SourceRun[]>([]);
@@ -156,7 +160,6 @@ export default function SubjectDetail() {
     setCollecting(true);
     try {
       await axiosClient.post(`/subjects/${id}/collect-all`);
-      // Mark all enabled as collecting
       const enabledIds = new Set(sources.filter((s) => s.enabled).map((s) => s.source_id));
       setCollectingSources(enabledIds);
       setTimeout(fetchSources, 1000);
@@ -164,6 +167,30 @@ export default function SubjectDetail() {
       // handle error
     } finally {
       setCollecting(false);
+    }
+  };
+
+  const discoverSources = async () => {
+    setDiscovering(true);
+    try {
+      await axiosClient.post(`/subjects/${id}/discover`);
+      // Also refetch subject to see status updates
+      const refetchSubject = () => {
+        axiosClient.get(`/subjects/${id}`).then((res) => setSubject(res.data)).catch(() => {});
+        fetchSources();
+      };
+      // Poll every 5s for up to 90s
+      discoverPollRef.current = setInterval(refetchSubject, 5000);
+      setTimeout(() => {
+        if (discoverPollRef.current) {
+          clearInterval(discoverPollRef.current);
+          discoverPollRef.current = null;
+        }
+        setDiscovering(false);
+        refetchSubject();
+      }, 90000);
+    } catch {
+      setDiscovering(false);
     }
   };
 
@@ -211,6 +238,11 @@ export default function SubjectDetail() {
           {subject.enabled ? "Enabled" : "Disabled"}
         </Badge>
       </div>
+      {subject.gsubject_status_text && (
+        <p className="text-muted mb-0">
+          <small>{subject.gsubject_status_text}</small>
+        </p>
+      )}
 
       <div className="d-flex align-items-center mt-4 mb-3">
         <h5 className="mb-0">
@@ -218,20 +250,36 @@ export default function SubjectDetail() {
           <small className="text-muted ms-2">({sources.length})</small>
         </h5>
         {canManage && (
-          <Button
-            variant="primary"
-            size="sm"
-            className="ms-3"
-            onClick={collectAll}
-            disabled={collecting || sources.every((s) => !s.enabled)}
-          >
-            {collecting ? (
-              <Spinner animation="border" size="sm" className="me-1" />
-            ) : (
-              <CollectionPlay className="me-1" />
-            )}
-            Collect All
-          </Button>
+          <>
+            <Button
+              variant="primary"
+              size="sm"
+              className="ms-3"
+              onClick={collectAll}
+              disabled={collecting || sources.every((s) => !s.enabled)}
+            >
+              {collecting ? (
+                <Spinner animation="border" size="sm" className="me-1" />
+              ) : (
+                <CollectionPlay className="me-1" />
+              )}
+              Collect All
+            </Button>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              className="ms-2"
+              onClick={discoverSources}
+              disabled={discovering}
+            >
+              {discovering ? (
+                <Spinner animation="border" size="sm" className="me-1" />
+              ) : (
+                <Search className="me-1" />
+              )}
+              Discover Sources
+            </Button>
+          </>
         )}
       </div>
 
@@ -264,6 +312,11 @@ export default function SubjectDetail() {
                       <Badge bg="info" className="ms-2" style={{ fontSize: "0.7em" }}>
                         custom
                       </Badge>
+                    )}
+                    {Object.values(s.user_inputs || {}).some((v) => v) ? (
+                      <CheckCircleFill className="ms-2 text-success" size={12} title="URLs configured" />
+                    ) : (
+                      <small className="ms-2 text-warning" title="No URLs configured yet">needs config</small>
                     )}
                   </td>
                   <td>

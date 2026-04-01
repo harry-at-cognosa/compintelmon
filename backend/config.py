@@ -16,3 +16,6 @@ DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 CORS_ORIGINS = [s.strip() for s in os.getenv("CORS_ORIGINS", "").split(",") if s.strip()]
+
+# LLM / CrewAI
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
