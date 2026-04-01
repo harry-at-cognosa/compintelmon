@@ -1,7 +1,7 @@
 """
 Test fixtures for CompIntelMon backend.
 
-Uses a separate test database (compintelmon_test).
+Uses a separate test database (cim_db_test).
 Uses NullPool to avoid asyncpg connection contention in tests.
 """
 import asyncio
@@ -17,7 +17,7 @@ from sqlalchemy.pool import NullPool
 # Override database URL BEFORE importing backend modules
 TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/compintelmon_test",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/cim_db_test",
 )
 TEST_DB_SYNC_URL = TEST_DB_URL.replace("+asyncpg", "+psycopg2")
 
