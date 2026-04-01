@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config import DEFAULT_ADMIN_PASSWORD
 from backend.db.session import SqlAsyncSession
-from backend.db.models import ApiGroups, ApiSettings, User
+from backend.db.models import ApiGroups, ApiSettings, PlaybookTemplates, User
 from backend.auth.users import password_helper
+from backend.db.playbook_defaults import PLAYBOOK_TEMPLATE_DEFAULTS
 
 
 async def _seed(session: AsyncSession):
@@ -55,9 +56,25 @@ async def _seed(session: AsyncSession):
     print("[seed] Default data seeded successfully.")
 
 
+async def _seed_playbook_templates(session: AsyncSession):
+    """Seed playbook templates if table is empty."""
+    count = await session.scalar(select(func.count()).select_from(PlaybookTemplates))
+    if count and count > 0:
+        print(f"[seed] Playbook templates already exist ({count} records), skipping.")
+        return
+
+    print(f"[seed] Seeding {len(PLAYBOOK_TEMPLATE_DEFAULTS)} playbook templates...")
+    for tpl_data in PLAYBOOK_TEMPLATE_DEFAULTS:
+        session.add(PlaybookTemplates(**tpl_data))
+    await session.commit()
+    print("[seed] Playbook templates seeded successfully.")
+
+
 async def run_seed():
     async with SqlAsyncSession() as session:
         await _seed(session)
+    async with SqlAsyncSession() as session:
+        await _seed_playbook_templates(session)
 
 
 def run_seed_sync():

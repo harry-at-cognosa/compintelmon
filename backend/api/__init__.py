@@ -8,6 +8,7 @@ from backend.api.users import router_users
 from backend.api.groups import router_groups
 from backend.api.settings import router_settings
 from backend.api.subjects import router_subjects
+from backend.api.sources import router_sources
 
 api_router = APIRouter(prefix=API_URL_PREFIX)
 
@@ -24,3 +25,4 @@ api_router.include_router(router_users, tags=["Users"])
 api_router.include_router(router_groups, tags=["Groups"])
 api_router.include_router(router_settings, tags=["Settings"])
 api_router.include_router(router_subjects, tags=["Subjects"])
+api_router.include_router(router_sources, tags=["Sources"])

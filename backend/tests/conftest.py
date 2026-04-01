@@ -35,8 +35,9 @@ session_mod.sql_async_engine = test_engine
 session_mod.SqlAsyncSession = TestSession
 
 from backend.db import Base
-from backend.db.models import ApiGroups, ApiSettings, User
+from backend.db.models import ApiGroups, ApiSettings, PlaybookTemplates, User
 from backend.auth.users import password_helper
+from backend.db.playbook_defaults import PLAYBOOK_TEMPLATE_DEFAULTS
 
 
 @pytest.fixture(scope="session")
@@ -95,6 +96,10 @@ async def setup_database():
             ApiSettings(name="navbar_color", value="slate"),
             ApiSettings(name="instance_label", value="TEST"),
         ])
+
+        # Seed playbook templates
+        for tpl_data in PLAYBOOK_TEMPLATE_DEFAULTS:
+            session.add(PlaybookTemplates(**tpl_data))
 
         await session.commit()
 

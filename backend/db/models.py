@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 from fastapi_users_db_sqlalchemy.generics import GUID
 from sqlalchemy import (
-    Boolean, DateTime, Enum, ForeignKey, Integer, VARCHAR,
+    Boolean, DateTime, Enum, ForeignKey, Index, Integer, JSON, Text, VARCHAR,
     CheckConstraint, UniqueConstraint,
     func, text,
 )
@@ -115,8 +115,97 @@ class GroupSubjects(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("'TRUE'"))
 
     group: Mapped["ApiGroups"] = relationship("ApiGroups", back_populates="group_subjects_list")
+    sources_list: Mapped[list["SubjectSources"]] = relationship("SubjectSources", back_populates="subject")
 
     __table_args__ = (
         # Composite index for group_id + sequence
         # (declared via Index in __table_args__ for consistency with the SQL schema)
+    )
+
+
+class PlaybookTemplates(Base):
+    __tablename__ = "playbook_templates"
+
+    template_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    subject_type: Mapped[GSubjectTypeEnum] = mapped_column(
+        Enum(GSubjectTypeEnum, name="gsubject_type_enum", create_constraint=False, native_enum=True),
+        nullable=False,
+    )
+    category_key: Mapped[str] = mapped_column(VARCHAR(64), nullable=False)
+    category_name: Mapped[str] = mapped_column(VARCHAR(128), nullable=False)
+    category_group: Mapped[str] = mapped_column(VARCHAR(64), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    default_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("'TRUE'"))
+    default_frequency_minutes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("360"))
+    collection_tool: Mapped[str] = mapped_column(VARCHAR(32), nullable=False)
+    collection_config: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
+    signal_instructions: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    user_inputs_schema: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("subject_type", "category_key", name="uq_playbook_subject_type_category"),
+    )
+
+
+class SubjectSources(Base):
+    __tablename__ = "subject_sources"
+
+    source_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    gsubject_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("group_subjects.gsubject_id", name="fk_subject_sources_gsubject_id"),
+        nullable=False,
+    )
+    template_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("playbook_templates.template_id", name="fk_subject_sources_template_id"),
+        nullable=True,
+    )
+    category_key: Mapped[str] = mapped_column(VARCHAR(64), nullable=False)
+    category_name: Mapped[str] = mapped_column(VARCHAR(128), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("'TRUE'"))
+    frequency_minutes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("360"))
+    collection_tool: Mapped[str] = mapped_column(VARCHAR(32), nullable=False)
+    collection_config: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
+    signal_instructions: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    user_inputs: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
+    last_collected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_status: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'pending'"))
+    last_status_text: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    deleted: Mapped[int] = mapped_column(Integer, index=True, nullable=False, server_default=text("0"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+    subject: Mapped["GroupSubjects"] = relationship("GroupSubjects", back_populates="sources_list")
+    template: Mapped["PlaybookTemplates | None"] = relationship("PlaybookTemplates")
+
+    __table_args__ = (
+        Index("ix_subject_sources_gsubject_deleted", "gsubject_id", "deleted"),
+    )
+
+
+class SubjectSourceRuns(Base):
+    __tablename__ = "subject_source_runs"
+
+    run_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    source_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("subject_sources.source_id", name="fk_source_runs_source_id"),
+        nullable=False,
+    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'pending'"))
+    items_collected: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    data_hash: Mapped[str | None] = mapped_column(VARCHAR(64), nullable=True)
+
+    source: Mapped["SubjectSources"] = relationship("SubjectSources")
+
+    __table_args__ = (
+        Index("ix_source_runs_source_started", "source_id", "started_at"),
     )

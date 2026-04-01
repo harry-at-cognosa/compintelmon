@@ -143,3 +143,71 @@ class SubjectUpdate(BaseModel):
     gsubject_name: str | None = None
     gsubject_type: str | None = None
     enabled: bool | None = None
+
+
+class SubjectReadWithSources(SubjectRead):
+    sources_provisioned: int = 0
+
+
+# ── Playbook template schemas ────────────────────────────────
+
+
+class PlaybookTemplateRead(BaseModel):
+    template_id: int
+    subject_type: str
+    category_key: str
+    category_name: str
+    category_group: str
+    description: str
+    default_enabled: bool
+    default_frequency_minutes: int
+    collection_tool: str
+    collection_config: dict
+    signal_instructions: str
+    user_inputs_schema: dict
+    priority: int
+    version: int
+
+    class Config:
+        from_attributes = True
+
+
+# ── Subject source schemas ────────────────────────────────────
+
+
+class SubjectSourceRead(BaseModel):
+    source_id: int
+    gsubject_id: int
+    template_id: int | None
+    category_key: str
+    category_name: str
+    enabled: bool
+    frequency_minutes: int
+    collection_tool: str
+    collection_config: dict
+    signal_instructions: str
+    user_inputs: dict
+    last_collected_at: datetime | None
+    last_status: str
+    last_status_text: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SubjectSourceUpdate(BaseModel):
+    enabled: bool | None = None
+    frequency_minutes: int | None = None
+    user_inputs: dict | None = None
+
+
+class SubjectSourceCreate(BaseModel):
+    category_key: str = Field(..., max_length=64)
+    category_name: str = Field(..., max_length=128)
+    enabled: bool = True
+    frequency_minutes: int = 360
+    collection_tool: str = "crawl4ai"
+    collection_config: dict = {}
+    signal_instructions: str = ""
+    user_inputs: dict = {}
