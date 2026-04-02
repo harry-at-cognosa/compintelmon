@@ -143,19 +143,20 @@ async def test_collect_single_source(admin_client: AsyncClient):
     )
     sid = resp.json()["gsubject_id"]
 
-    # Get sources and find one with httpx tool
+    # Get sources and find one that's enabled
     resp = await admin_client.get(f"/api/v1/subjects/{sid}/sources")
     sources = resp.json()
-    httpx_source = next((s for s in sources if s["collection_tool"] == "httpx"), None)
-    assert httpx_source is not None
+    enabled_source = next((s for s in sources if s["enabled"]), None)
+    assert enabled_source is not None
 
     # Mock the collector to avoid real HTTP
     mock_result = CollectionResult(
         status="ok", items=[{"url": "test"}], content_hash="abc123", raw_content="test content"
     )
-    with patch("backend.services.collection_runner.COLLECTOR_REGISTRY", {"httpx": AsyncMock(return_value=mock_result)}):
+    tool = enabled_source["collection_tool"]
+    with patch("backend.services.collection_runner.COLLECTOR_REGISTRY", {tool: AsyncMock(return_value=mock_result)}):
         resp = await admin_client.post(
-            f"/api/v1/subjects/{sid}/sources/{httpx_source['source_id']}/collect"
+            f"/api/v1/subjects/{sid}/sources/{enabled_source['source_id']}/collect"
         )
     assert resp.status_code == 200
     assert resp.json()["status"] == "started"
@@ -193,7 +194,7 @@ async def test_collect_disabled_source_returns_400(admin_client: AsyncClient):
 async def test_collect_all(admin_client: AsyncClient):
     resp = await admin_client.post(
         "/api/v1/subjects",
-        json={"gsubject_type": "topic", "gsubject_name": "Collect All Test"},
+        json={"gsubject_type": "company", "gsubject_name": "Collect All Test"},
     )
     sid = resp.json()["gsubject_id"]
 
@@ -201,7 +202,7 @@ async def test_collect_all(admin_client: AsyncClient):
         resp = await admin_client.post(f"/api/v1/subjects/{sid}/collect-all")
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data["runs"]) > 0
+    assert len(data["runs"]) > 0  # company has enabled sources
 
     await admin_client.delete(f"/api/v1/subjects/{sid}")
 

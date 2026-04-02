@@ -3,6 +3,10 @@ Default playbook template records for all 4 subject types.
 55 total: 19 company, 12 product, 12 service, 12 topic.
 
 Each dict maps to the playbook_templates table columns.
+
+NOTE: Only sources with working collectors (url_template-based crawl4ai, feedparser, httpx)
+are enabled by default. Sources requiring unimplemented tools (playwright, tweepy, praw)
+or search/API-based collection are disabled until those collectors are built.
 """
 
 
@@ -46,7 +50,7 @@ def _company_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "website_pricing", "category_name": "Pricing Page",
-            "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
+            "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "playwright", "priority": 3,
             "description": "Monitor pricing page for plan, price, and feature changes.",
             "signal_instructions": (
@@ -109,7 +113,7 @@ def _company_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "social_twitter", "category_name": "Twitter / X",
-            "category_group": "social", "default_enabled": True, "default_frequency_minutes": 60,
+            "category_group": "social", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "tweepy", "priority": 7,
             "description": "Monitor official Twitter/X account and brand mentions.",
             "signal_instructions": (
@@ -140,7 +144,7 @@ def _company_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "social_reddit", "category_name": "Reddit Mentions",
-            "category_group": "social", "default_enabled": True, "default_frequency_minutes": 120,
+            "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 9,
             "description": "Search Reddit for company mentions, complaints, and comparisons.",
             "signal_instructions": (
@@ -159,7 +163,7 @@ def _company_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "news_general", "category_name": "News & Press",
-            "category_group": "news", "default_enabled": True, "default_frequency_minutes": 60,
+            "category_group": "news", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "httpx", "priority": 10,
             "description": "Search news sources for company mentions and breaking stories.",
             "signal_instructions": (
@@ -175,7 +179,7 @@ def _company_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "news_press_releases", "category_name": "Press Releases",
-            "category_group": "news", "default_enabled": True, "default_frequency_minutes": 360,
+            "category_group": "news", "default_enabled": False, "default_frequency_minutes": 360,
             "collection_tool": "feedparser", "priority": 11,
             "description": "Monitor PR Newswire, Business Wire for official press releases.",
             "signal_instructions": (
@@ -328,7 +332,7 @@ def _product_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "product_pricing", "category_name": "Pricing",
-            "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
+            "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "playwright", "priority": 2,
             "description": "Monitor pricing for plan, price, and feature matrix changes.",
             "signal_instructions": "Capture all plans, prices, feature matrices, usage limits. Detect price increases, new tiers, bundling changes. Use Playwright for JS-rendered pricing.",
@@ -382,7 +386,7 @@ def _product_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "product_social", "category_name": "Social Mentions",
-            "category_group": "social", "default_enabled": True, "default_frequency_minutes": 120,
+            "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 8,
             "description": "Search Twitter/X and Reddit for product mentions and sentiment.",
             "signal_instructions": "Search Twitter/X and Reddit for product mentions. Complaints, feature requests, 'just switched from/to' posts. Track sentiment.",
@@ -409,7 +413,7 @@ def _product_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "news_product", "category_name": "Product News Coverage",
-            "category_group": "news", "default_enabled": True, "default_frequency_minutes": 120,
+            "category_group": "news", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "httpx", "priority": 11,
             "description": "Search tech news for product reviews and announcements.",
             "signal_instructions": "Search tech news sites for product coverage. Reviews, announcements, comparative articles.",
@@ -442,7 +446,7 @@ def _service_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "service_pricing", "category_name": "Pricing / Plans",
-            "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
+            "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "playwright", "priority": 2,
             "description": "Monitor pricing, SLA terms, and usage-based pricing.",
             "signal_instructions": "Plan changes, price adjustments, SLA terms, usage-based pricing components. Use Playwright for interactive calculators.",
@@ -496,7 +500,7 @@ def _service_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "service_social", "category_name": "Social Mentions",
-            "category_group": "social", "default_enabled": True, "default_frequency_minutes": 120,
+            "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 8,
             "description": "Outage reports, migration stories, feature feedback.",
             "signal_instructions": "Monitor Twitter/X and Reddit for service mentions. Outage reports, migration stories, feature complaints/praise.",
@@ -523,7 +527,7 @@ def _service_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "news_service", "category_name": "News Coverage",
-            "category_group": "news", "default_enabled": True, "default_frequency_minutes": 120,
+            "category_group": "news", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "httpx", "priority": 11,
             "description": "Outage reports, comparative articles, industry coverage.",
             "signal_instructions": "Search news for service coverage, outage reports, and comparative articles.",
@@ -547,7 +551,7 @@ def _topic_templates() -> list[dict]:
     return [
         {
             "subject_type": T, "category_key": "topic_news", "category_name": "News Coverage",
-            "category_group": "news", "default_enabled": True, "default_frequency_minutes": 60,
+            "category_group": "news", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "httpx", "priority": 1,
             "description": "Search news sources for topic-related articles and trend shifts.",
             "signal_instructions": "Search Google News, Bing News, industry outlets for topic-related articles. Detect trend shifts, new entrants, opinion pieces from key voices. Deduplicate.",
@@ -556,7 +560,7 @@ def _topic_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "topic_twitter", "category_name": "Twitter / X Discussion",
-            "category_group": "social", "default_enabled": True, "default_frequency_minutes": 60,
+            "category_group": "social", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "tweepy", "priority": 2,
             "description": "Monitor topic discussion, trending hashtags, and influential voices.",
             "signal_instructions": "Monitor Twitter/X for topic discussion, trending hashtags, influential voices. Identify emerging narratives and sentiment shifts. Track volume spikes.",
@@ -565,7 +569,7 @@ def _topic_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "topic_reddit", "category_name": "Reddit Discussion",
-            "category_group": "social", "default_enabled": True, "default_frequency_minutes": 120,
+            "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 3,
             "description": "Monitor subreddits for topic discussion — often leads mainstream coverage.",
             "signal_instructions": "Monitor relevant subreddits. Track post volume, top posts, comment sentiment. Reddit often leads mainstream coverage by days.",
@@ -574,7 +578,7 @@ def _topic_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "topic_blogs", "category_name": "Industry Blogs",
-            "category_group": "web", "default_enabled": True, "default_frequency_minutes": 360,
+            "category_group": "web", "default_enabled": False, "default_frequency_minutes": 360,
             "collection_tool": "feedparser", "priority": 4,
             "description": "Monitor analyst and thought leader blogs via RSS.",
             "signal_instructions": "Monitor industry blogs via RSS. Users can add feeds from analysts, thought leaders, and industry publications. Collect and summarize new posts mentioning the topic.",
@@ -619,7 +623,7 @@ def _topic_templates() -> list[dict]:
         },
         {
             "subject_type": T, "category_key": "topic_hacker_news", "category_name": "Hacker News",
-            "category_group": "community", "default_enabled": True, "default_frequency_minutes": 120,
+            "category_group": "community", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "httpx", "priority": 9,
             "description": "Leading indicator for tech trends and developer sentiment.",
             "signal_instructions": "Search Hacker News (Algolia API) for topic-related submissions and comments. HN is a leading indicator for tech trends.",
