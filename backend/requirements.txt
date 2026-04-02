@@ -16,6 +16,9 @@ greenlet>=3.0.0
 feedparser>=6.0.0
 crawl4ai>=0.4.0
 
+# Scheduling
+apscheduler>=3.10.0,<4
+
 # AI Agent framework
 crewai[tools,anthropic]>=0.121.0
 

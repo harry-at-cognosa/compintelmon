@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import SubjectSourceRuns
+from backend.db.models import SubjectSourceRuns, SubjectSources, GroupSubjects
 
 
 class SubjectSourceRunsTable:
@@ -31,6 +31,33 @@ class SubjectSourceRunsTable:
         await self.session.commit()
         await self.session.refresh(run)
         return run
+
+    async def get_recent_runs_global(self, limit: int = 10) -> list[dict]:
+        """Get recent runs across all subjects with subject/source names."""
+        result = await self.session.execute(
+            select(
+                SubjectSourceRuns.run_id,
+                SubjectSourceRuns.started_at,
+                SubjectSourceRuns.status,
+                SubjectSources.category_name,
+                GroupSubjects.gsubject_name,
+            )
+            .join(SubjectSources, SubjectSourceRuns.source_id == SubjectSources.source_id)
+            .join(GroupSubjects, SubjectSources.gsubject_id == GroupSubjects.gsubject_id)
+            .order_by(SubjectSourceRuns.started_at.desc())
+            .limit(limit)
+        )
+        rows = result.all()
+        return [
+            {
+                "run_id": r.run_id,
+                "started_at": r.started_at,
+                "status": r.status,
+                "source_name": r.category_name,
+                "subject_name": r.gsubject_name,
+            }
+            for r in rows
+        ]
 
     async def update_run(self, run_id: int, **kwargs) -> SubjectSourceRuns | None:
         run = await self.get_by_id(run_id)

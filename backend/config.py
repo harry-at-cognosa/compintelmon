@@ -17,5 +17,8 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 CORS_ORIGINS = [s.strip() for s in os.getenv("CORS_ORIGINS", "").split(",") if s.strip()]
 
+# Scheduler
+SCHEDULER_CHECK_INTERVAL_SECONDS = int(os.getenv("SCHEDULER_CHECK_INTERVAL_SECONDS", "60"))
+
 # LLM / CrewAI
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")

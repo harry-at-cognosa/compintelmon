@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import extract, or_, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import SubjectSources
@@ -31,6 +31,48 @@ class SubjectSourcesTable:
             .order_by(SubjectSources.source_id)
         )
         return result.scalars().all()
+
+    async def get_all_due_sources(self) -> Sequence[SubjectSources]:
+        """Get all enabled sources that are due for collection (across all subjects)."""
+        now = func.now()
+        result = await self.session.execute(
+            select(SubjectSources)
+            .where(
+                SubjectSources.deleted == 0,
+                SubjectSources.enabled == True,
+                or_(
+                    SubjectSources.last_collected_at.is_(None),
+                    extract("epoch", now - SubjectSources.last_collected_at)
+                    >= SubjectSources.frequency_minutes * 60,
+                ),
+            )
+        )
+        return result.scalars().all()
+
+    async def count_enabled(self) -> int:
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(SubjectSources)
+            .where(SubjectSources.deleted == 0, SubjectSources.enabled == True)
+        )
+        return result.scalar() or 0
+
+    async def count_due(self) -> int:
+        now = func.now()
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(SubjectSources)
+            .where(
+                SubjectSources.deleted == 0,
+                SubjectSources.enabled == True,
+                or_(
+                    SubjectSources.last_collected_at.is_(None),
+                    extract("epoch", now - SubjectSources.last_collected_at)
+                    >= SubjectSources.frequency_minutes * 60,
+                ),
+            )
+        )
+        return result.scalar() or 0
 
     async def get_by_id(self, source_id: int) -> SubjectSources | None:
         result = await self.session.execute(

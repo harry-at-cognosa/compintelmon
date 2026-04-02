@@ -10,6 +10,12 @@ class GroupSubjectsTable:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def count_all(self) -> int:
+        result = await self.session.execute(
+            select(func.count()).select_from(GroupSubjects).where(GroupSubjects.deleted == 0)
+        )
+        return result.scalar() or 0
+
     async def get_by_group(self, group_id: int) -> Sequence[GroupSubjects]:
         result = await self.session.execute(
             select(GroupSubjects)

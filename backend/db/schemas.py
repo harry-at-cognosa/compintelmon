@@ -247,3 +247,29 @@ class CollectAllResponse(BaseModel):
 class DiscoverResponse(BaseModel):
     status: str
     message: str
+
+
+# ── Scheduler schemas ─────────────────────────────────────────
+
+
+class SchedulerStatusResponse(BaseModel):
+    running: bool
+    next_check_time: datetime | None
+
+
+# ── Dashboard schemas ─────────────────────────────────────────
+
+
+class DashboardStats(BaseModel):
+    total_subjects: int
+    total_enabled_sources: int
+    sources_due: int
+    scheduler_running: bool
+
+
+class RecentRunRead(BaseModel):
+    run_id: int
+    subject_name: str
+    source_name: str
+    status: str
+    started_at: datetime
