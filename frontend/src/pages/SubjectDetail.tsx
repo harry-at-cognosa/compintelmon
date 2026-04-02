@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Table, Badge, Form, Button, Spinner, Collapse, Card } from "react-bootstrap";
-import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText } from "react-bootstrap-icons";
+import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText, ChatDots } from "react-bootstrap-icons";
 import Markdown from "react-markdown";
 import axiosClient from "../api/axiosClient";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -391,6 +391,16 @@ export default function SubjectDetail() {
                 <BarChart className="me-1" />
               )}
               Analyze
+            </Button>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="ms-2"
+              onClick={() => navigate(`/app/subjects/${id}/chat`)}
+              title="Open chat to provide updates or ask questions"
+            >
+              <ChatDots className="me-1" />
+              Chat
             </Button>
           </>
         )}

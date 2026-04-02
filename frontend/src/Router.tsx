@@ -6,6 +6,7 @@ import Subjects from "./pages/Subjects";
 import SubjectDetail from "./pages/SubjectDetail";
 import Settings from "./pages/Settings";
 import GroupSettings from "./pages/GroupSettings";
+import SubjectChat from "./pages/SubjectChat";
 import Logout from "./pages/Logout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -25,6 +26,10 @@ export const Router = createBrowserRouter([
       {
         path: "subjects/:id",
         element: <SubjectDetail />,
+      },
+      {
+        path: "subjects/:id/chat",
+        element: <SubjectChat />,
       },
       {
         path: "logout",

@@ -264,3 +264,53 @@ class Reports(Base):
     __table_args__ = (
         Index("ix_reports_gsubject_created", "gsubject_id", "created_at"),
     )
+
+
+class Conversations(Base):
+    __tablename__ = "conversations"
+
+    conversation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    gsubject_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("group_subjects.gsubject_id", name="fk_conversations_gsubject_id"),
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("api_users.user_id", name="fk_conversations_user_id"),
+        nullable=False,
+    )
+    conversation_type: Mapped[str] = mapped_column(VARCHAR(16), nullable=False)  # "update" or "query"
+    title: Mapped[str] = mapped_column(VARCHAR(256), nullable=False, server_default=text("''"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+    subject: Mapped["GroupSubjects"] = relationship("GroupSubjects")
+    messages_list: Mapped[list["ConversationMessages"]] = relationship("ConversationMessages", back_populates="conversation")
+
+    __table_args__ = (
+        Index("ix_conversations_gsubject_created", "gsubject_id", "created_at"),
+    )
+
+
+class ConversationMessages(Base):
+    __tablename__ = "conversation_messages"
+
+    message_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("conversations.conversation_id", name="fk_messages_conversation_id"),
+        nullable=False,
+    )
+    role: Mapped[str] = mapped_column(VARCHAR(16), nullable=False)  # "user" or "assistant"
+    content: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    message_type: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'text'"))
+    metadata_json: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
+    status: Mapped[str] = mapped_column(VARCHAR(16), nullable=False, server_default=text("'ok'"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    conversation: Mapped["Conversations"] = relationship("Conversations", back_populates="messages_list")
+
+    __table_args__ = (
+        Index("ix_messages_conversation_created", "conversation_id", "created_at"),
+    )

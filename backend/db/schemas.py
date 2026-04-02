@@ -326,3 +326,48 @@ class GenerateReportResponse(BaseModel):
     report_id: int
     status: str
     message: str
+
+
+# ── Conversation schemas ──────────────────────────────────────
+
+
+class ConversationRead(BaseModel):
+    conversation_id: int
+    gsubject_id: int
+    user_id: int
+    conversation_type: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationCreate(BaseModel):
+    conversation_type: str = Field(..., pattern=r"^(update|query)$")
+    title: str = ""
+
+
+class ConversationMessageRead(BaseModel):
+    message_id: int
+    conversation_id: int
+    role: str
+    content: str
+    message_type: str
+    metadata_json: dict
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SendMessageRequest(BaseModel):
+    content: str = Field(..., min_length=1, max_length=4000)
+
+
+class SendMessageResponse(BaseModel):
+    message_id: int
+    status: str
+    message: str
