@@ -11,6 +11,7 @@ from backend.api.subjects import router_subjects
 from backend.api.sources import router_sources
 from backend.api.scheduler import router_scheduler
 from backend.api.dashboard import router_dashboard
+from backend.api.analyses import router_analyses
 
 api_router = APIRouter(prefix=API_URL_PREFIX)
 
@@ -30,3 +31,4 @@ api_router.include_router(router_subjects, tags=["Subjects"])
 api_router.include_router(router_sources, tags=["Sources"])
 api_router.include_router(router_scheduler)
 api_router.include_router(router_dashboard)
+api_router.include_router(router_analyses, tags=["Analyses"])

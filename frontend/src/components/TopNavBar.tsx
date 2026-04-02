@@ -3,12 +3,37 @@ import { LinkContainer } from "react-router-bootstrap";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
 
+const NAVBAR_COLORS: Record<string, string> = {
+  slate: "#334155",
+  gray: "#374151",
+  zinc: "#27272a",
+  stone: "#292524",
+  red: "#991b1b",
+  orange: "#9a3412",
+  amber: "#92400e",
+  yellow: "#854d0e",
+  lime: "#3f6212",
+  green: "#166534",
+  emerald: "#065f46",
+  teal: "#115e59",
+  cyan: "#155e75",
+  sky: "#075985",
+  blue: "#1e40af",
+  indigo: "#3730a3",
+  violet: "#5b21b6",
+  purple: "#6b21a8",
+  fuchsia: "#86198f",
+  pink: "#9d174d",
+  rose: "#9f1239",
+};
+
 export default function TopNavBar() {
   const auth = useAuthStore();
-  const { app_title, instance_label } = useSettingsStore();
+  const { app_title, instance_label, navbar_color } = useSettingsStore();
+  const bgColor = NAVBAR_COLORS[navbar_color] || NAVBAR_COLORS.slate;
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
+    <Navbar variant="dark" expand="lg" className="px-3" style={{ backgroundColor: bgColor }}>
       <Container fluid>
         <LinkContainer to="/app">
           <Navbar.Brand>

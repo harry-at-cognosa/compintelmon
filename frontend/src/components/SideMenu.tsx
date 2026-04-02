@@ -29,6 +29,12 @@ export default function SideMenu() {
           </>
         )}
 
+        {(auth.is_groupadmin || auth.is_superuser) && (
+          <LinkContainer to="/app/admin/group-settings">
+            <Nav.Link>Group Settings</Nav.Link>
+          </LinkContainer>
+        )}
+
         {auth.is_superuser && (
           <LinkContainer to="/app/su/settings">
             <Nav.Link>Global Settings</Nav.Link>

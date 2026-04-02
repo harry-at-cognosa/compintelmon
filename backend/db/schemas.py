@@ -273,3 +273,56 @@ class RecentRunRead(BaseModel):
     source_name: str
     status: str
     started_at: datetime
+
+
+# ── Analysis schemas ──────────────────────────────────────────
+
+
+class AnalysisRead(BaseModel):
+    analysis_id: int
+    gsubject_id: int
+    created_at: datetime
+    analysis_type: str
+    summary: str
+    key_findings: list
+    signals: list
+    sources_analyzed: list
+    status: str
+    error_detail: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class AnalyzeResponse(BaseModel):
+    analysis_id: int
+    status: str
+    message: str
+
+
+# ── Report schemas ────────────────────────────────────────────
+
+
+class ReportRead(BaseModel):
+    report_id: int
+    analysis_id: int
+    gsubject_id: int
+    created_at: datetime
+    report_type: str
+    title: str
+    content_markdown: str
+    status: str
+    error_detail: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class GenerateReportRequest(BaseModel):
+    report_type: str = "battlecard"
+
+
+class GenerateReportResponse(BaseModel):
+    report_id: int
+    status: str
+    message: str

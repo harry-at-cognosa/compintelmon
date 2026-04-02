@@ -79,3 +79,18 @@ async def upsert_group_setting(
     if not user.is_superuser and user.group_id != group_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return await GroupSettingsTable(session).upsert(group_id, payload.name, payload.value)
+
+
+@router_settings.delete("/group_settings/{group_id}/{name}", status_code=204)
+async def delete_group_setting(
+    group_id: int,
+    name: str,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_groupadmin_or_above(user)
+    if not user.is_superuser and user.group_id != group_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    ok = await GroupSettingsTable(session).delete(group_id, name)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Setting not found")

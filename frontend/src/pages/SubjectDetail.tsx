@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Container, Table, Badge, Form, Button, Spinner, Collapse } from "react-bootstrap";
-import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill } from "react-bootstrap-icons";
+import { Container, Table, Badge, Form, Button, Spinner, Collapse, Card } from "react-bootstrap";
+import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText } from "react-bootstrap-icons";
+import Markdown from "react-markdown";
 import axiosClient from "../api/axiosClient";
 import { useAuthStore } from "../stores/useAuthStore";
 
@@ -38,6 +39,31 @@ interface SourceRun {
   items_collected: number;
   error_detail: string | null;
   data_hash: string | null;
+}
+
+interface Analysis {
+  analysis_id: number;
+  gsubject_id: number;
+  created_at: string;
+  analysis_type: string;
+  summary: string;
+  key_findings: { category: string; finding: string; severity: string; source_key: string }[];
+  signals: { signal_type: string; description: string; confidence: string; source_key: string }[];
+  sources_analyzed: string[];
+  status: string;
+  error_detail: string | null;
+}
+
+interface Report {
+  report_id: number;
+  analysis_id: number;
+  gsubject_id: number;
+  created_at: string;
+  report_type: string;
+  title: string;
+  content_markdown: string;
+  status: string;
+  error_detail: string | null;
 }
 
 function formatFrequency(minutes: number): string {
@@ -86,6 +112,13 @@ export default function SubjectDetail() {
   const [expandedSource, setExpandedSource] = useState<number | null>(null);
   const [runs, setRuns] = useState<SourceRun[]>([]);
   const [runsLoading, setRunsLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [expandedAnalysis, setExpandedAnalysis] = useState<number | null>(null);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [expandedReport, setExpandedReport] = useState<number | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const analyzePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const auth = useAuthStore();
   const canManage = auth.is_subjectmanager || auth.is_groupadmin || auth.is_superuser;
@@ -100,10 +133,14 @@ export default function SubjectDetail() {
     Promise.all([
       axiosClient.get(`/subjects/${id}`),
       axiosClient.get(`/subjects/${id}/sources`),
+      axiosClient.get(`/subjects/${id}/analyses?limit=5`),
+      axiosClient.get(`/subjects/${id}/reports?limit=5`),
     ])
-      .then(([subjectRes, sourcesRes]) => {
+      .then(([subjectRes, sourcesRes, analysesRes, reportsRes]) => {
         setSubject(subjectRes.data);
         setSources(sourcesRes.data);
+        setAnalyses(analysesRes.data);
+        setReports(reportsRes.data);
       })
       .catch(() => navigate("/app/subjects"))
       .finally(() => setLoading(false));
@@ -194,6 +231,65 @@ export default function SubjectDetail() {
     }
   };
 
+  const fetchAnalysesAndReports = () => {
+    if (!id) return;
+    axiosClient.get(`/subjects/${id}/analyses?limit=5`).then((res) => setAnalyses(res.data)).catch(() => {});
+    axiosClient.get(`/subjects/${id}/reports?limit=5`).then((res) => setReports(res.data)).catch(() => {});
+  };
+
+  const analyzeSubject = async () => {
+    setAnalyzing(true);
+    try {
+      await axiosClient.post(`/subjects/${id}/analyze`);
+      // Poll for completion
+      analyzePollRef.current = setInterval(fetchAnalysesAndReports, 5000);
+      setTimeout(() => {
+        if (analyzePollRef.current) {
+          clearInterval(analyzePollRef.current);
+          analyzePollRef.current = null;
+        }
+        setAnalyzing(false);
+        fetchAnalysesAndReports();
+      }, 120000);
+    } catch {
+      setAnalyzing(false);
+    }
+  };
+
+  // Stop analyzing spinner when analysis completes
+  useEffect(() => {
+    if (analyzing && analyses.length > 0 && analyses[0].status !== "pending" && analyses[0].status !== "running") {
+      setAnalyzing(false);
+      if (analyzePollRef.current) {
+        clearInterval(analyzePollRef.current);
+        analyzePollRef.current = null;
+      }
+    }
+  }, [analyses, analyzing]);
+
+  const generateReport = async (analysisId: number, reportType: string = "battlecard") => {
+    setGeneratingReport(true);
+    try {
+      await axiosClient.post(`/subjects/${id}/analyses/${analysisId}/report`, { report_type: reportType });
+      // Poll for completion
+      const pollId = setInterval(fetchAnalysesAndReports, 5000);
+      setTimeout(() => {
+        clearInterval(pollId);
+        setGeneratingReport(false);
+        fetchAnalysesAndReports();
+      }, 90000);
+    } catch {
+      setGeneratingReport(false);
+    }
+  };
+
+  // Stop generating spinner when report completes
+  useEffect(() => {
+    if (generatingReport && reports.length > 0 && reports[0].status !== "pending" && reports[0].status !== "running") {
+      setGeneratingReport(false);
+    }
+  }, [reports, generatingReport]);
+
   const toggleRuns = async (sourceId: number) => {
     if (expandedSource === sourceId) {
       setExpandedSource(null);
@@ -278,6 +374,20 @@ export default function SubjectDetail() {
                 <Search className="me-1" />
               )}
               Discover Sources
+            </Button>
+            <Button
+              variant="outline-info"
+              size="sm"
+              className="ms-2"
+              onClick={analyzeSubject}
+              disabled={analyzing}
+            >
+              {analyzing ? (
+                <Spinner animation="border" size="sm" className="me-1" />
+              ) : (
+                <BarChart className="me-1" />
+              )}
+              Analyze
             </Button>
           </>
         )}
@@ -407,6 +517,139 @@ export default function SubjectDetail() {
             ))}
           </tbody>
         </Table>
+      )}
+
+      {/* ── Analyses Section ── */}
+      <h5 className="mt-5 mb-3">
+        <BarChart className="me-2" />
+        Analyses
+        <small className="text-muted ms-2">({analyses.length})</small>
+      </h5>
+
+      {analyses.length === 0 ? (
+        <p className="text-muted">No analyses yet. Click "Analyze" to extract intelligence from collected data.</p>
+      ) : (
+        <div>
+          {analyses.map((a) => (
+            <Card key={a.analysis_id} className="mb-2">
+              <Card.Body
+                style={{ cursor: "pointer" }}
+                onClick={() => setExpandedAnalysis(expandedAnalysis === a.analysis_id ? null : a.analysis_id)}
+              >
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong>Analysis #{a.analysis_id}</strong>
+                    <span className="ms-2">{statusBadge(a.status)}</span>
+                    <small className="ms-2 text-muted">{formatRelativeTime(a.created_at)}</small>
+                  </div>
+                  {canManage && a.status === "ok" && (
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        generateReport(a.analysis_id);
+                      }}
+                      disabled={generatingReport}
+                    >
+                      {generatingReport ? <Spinner size="sm" /> : <><FileText size={14} className="me-1" />Generate Report</>}
+                    </Button>
+                  )}
+                </div>
+                {a.summary && <p className="mt-2 mb-0 text-muted" style={{ fontSize: "0.9em" }}>{a.summary.substring(0, 200)}...</p>}
+              </Card.Body>
+              <Collapse in={expandedAnalysis === a.analysis_id}>
+                <div className="px-3 pb-3">
+                  {a.summary && (
+                    <div className="mb-3">
+                      <strong>Summary:</strong>
+                      <p style={{ whiteSpace: "pre-wrap" }}>{a.summary}</p>
+                    </div>
+                  )}
+                  {a.key_findings && a.key_findings.length > 0 && (
+                    <div className="mb-3">
+                      <strong>Key Findings ({a.key_findings.length}):</strong>
+                      <Table size="sm" className="mt-1">
+                        <thead><tr><th>Severity</th><th>Finding</th><th>Source</th></tr></thead>
+                        <tbody>
+                          {a.key_findings.map((f, i) => (
+                            <tr key={i}>
+                              <td><Badge bg={f.severity === "high" ? "danger" : f.severity === "medium" ? "warning" : "secondary"}>{f.severity}</Badge></td>
+                              <td>{f.finding}</td>
+                              <td><small>{f.source_key}</small></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  )}
+                  {a.signals && a.signals.length > 0 && (
+                    <div>
+                      <strong>Signals ({a.signals.length}):</strong>
+                      <Table size="sm" className="mt-1">
+                        <thead><tr><th>Confidence</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                          {a.signals.map((s, i) => (
+                            <tr key={i}>
+                              <td><Badge bg={s.confidence === "high" ? "success" : s.confidence === "medium" ? "info" : "secondary"}>{s.confidence}</Badge></td>
+                              <td><code>{s.signal_type}</code></td>
+                              <td>{s.description}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  )}
+                  {a.error_detail && <p className="text-danger">{a.error_detail}</p>}
+                </div>
+              </Collapse>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* ── Reports Section ── */}
+      <h5 className="mt-5 mb-3">
+        <FileText className="me-2" />
+        Reports
+        <small className="text-muted ms-2">({reports.length})</small>
+      </h5>
+
+      {reports.length === 0 ? (
+        <p className="text-muted">No reports yet. Generate a report from an analysis above.</p>
+      ) : (
+        <div>
+          {reports.map((r) => (
+            <Card key={r.report_id} className="mb-2">
+              <Card.Body
+                style={{ cursor: "pointer" }}
+                onClick={() => setExpandedReport(expandedReport === r.report_id ? null : r.report_id)}
+              >
+                <div className="d-flex justify-content-between">
+                  <div>
+                    <strong>{r.title || `Report #${r.report_id}`}</strong>
+                    <Badge bg="secondary" className="ms-2">{r.report_type}</Badge>
+                    <span className="ms-2">{statusBadge(r.status)}</span>
+                    <small className="ms-2 text-muted">{formatRelativeTime(r.created_at)}</small>
+                  </div>
+                </div>
+              </Card.Body>
+              <Collapse in={expandedReport === r.report_id}>
+                <div className="px-3 pb-3">
+                  {r.status === "ok" && r.content_markdown ? (
+                    <div className="border rounded p-3 bg-white">
+                      <Markdown>{r.content_markdown}</Markdown>
+                    </div>
+                  ) : r.error_detail ? (
+                    <p className="text-danger">{r.error_detail}</p>
+                  ) : (
+                    <p className="text-muted">Report is {r.status}...</p>
+                  )}
+                </div>
+              </Collapse>
+            </Card>
+          ))}
+        </div>
       )}
     </Container>
   );

@@ -209,3 +209,58 @@ class SubjectSourceRuns(Base):
     __table_args__ = (
         Index("ix_source_runs_source_started", "source_id", "started_at"),
     )
+
+
+class Analyses(Base):
+    __tablename__ = "analyses"
+
+    analysis_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    gsubject_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("group_subjects.gsubject_id", name="fk_analyses_gsubject_id"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    analysis_type: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'full'"))
+    summary: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    key_findings: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    signals: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    raw_analysis: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    sources_analyzed: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    status: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'pending'"))
+    error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    subject: Mapped["GroupSubjects"] = relationship("GroupSubjects")
+
+    __table_args__ = (
+        Index("ix_analyses_gsubject_created", "gsubject_id", "created_at"),
+    )
+
+
+class Reports(Base):
+    __tablename__ = "reports"
+
+    report_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    analysis_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("analyses.analysis_id", name="fk_reports_analysis_id"),
+        nullable=False,
+    )
+    gsubject_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("group_subjects.gsubject_id", name="fk_reports_gsubject_id"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    report_type: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'battlecard'"))
+    title: Mapped[str] = mapped_column(VARCHAR(256), nullable=False, server_default=text("''"))
+    content_markdown: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    status: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'pending'"))
+    error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    analysis: Mapped["Analyses"] = relationship("Analyses")
+    subject: Mapped["GroupSubjects"] = relationship("GroupSubjects")
+
+    __table_args__ = (
+        Index("ix_reports_gsubject_created", "gsubject_id", "created_at"),
+    )

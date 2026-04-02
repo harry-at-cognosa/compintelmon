@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Subjects from "./pages/Subjects";
 import SubjectDetail from "./pages/SubjectDetail";
 import Settings from "./pages/Settings";
+import GroupSettings from "./pages/GroupSettings";
 import Logout from "./pages/Logout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -28,6 +29,16 @@ export const Router = createBrowserRouter([
       {
         path: "logout",
         element: <Logout />,
+      },
+      {
+        path: "admin",
+        element: <ProtectedRoute requiredRole="groupadmin" />,
+        children: [
+          {
+            path: "group-settings",
+            element: <GroupSettings />,
+          },
+        ],
       },
       {
         path: "su",
