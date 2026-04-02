@@ -197,7 +197,8 @@ def _save_collected_data(
     dir_path = os.path.join(DATA_DIR, str(group_id), str(gsubject_id))
     os.makedirs(dir_path, exist_ok=True)
 
-    file_path = os.path.join(dir_path, f"{category_key}_{run_id}.json")
+    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+    file_path = os.path.join(dir_path, f"{date_str}_{category_key}_{run_id}.json")
     data = {
         "run_id": run_id,
         "category_key": category_key,
