@@ -52,9 +52,19 @@ export default function SubjectChat() {
   const [creating, setCreating] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const canManage = auth.is_subjectmanager || auth.is_groupadmin || auth.is_superuser;
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Fetch subject name
   useEffect(() => {
@@ -72,8 +82,8 @@ export default function SubjectChat() {
     fetchConversations();
   }, [fetchConversations]);
 
-  // Fetch messages for active conversation
-  const fetchMessages = useCallback(() => {
+  // Fetch all messages for active conversation (used on conversation switch)
+  const fetchAllMessages = useCallback(() => {
     if (!id || !activeConvId) return;
     axiosClient
       .get(`/subjects/${id}/conversations/${activeConvId}/messages`)
@@ -83,33 +93,63 @@ export default function SubjectChat() {
 
   useEffect(() => {
     if (activeConvId) {
-      fetchMessages();
+      fetchAllMessages();
     } else {
       setMessages([]);
     }
-  }, [activeConvId, fetchMessages]);
+    // Stop any existing polling when switching conversations
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  }, [activeConvId, fetchAllMessages]);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Polling while sending — stop when assistant responds
-  useEffect(() => {
-    if (sending && !pollRef.current) {
-      pollRef.current = setInterval(fetchMessages, 2000);
-    }
-    // Check if assistant has responded (non-pending)
-    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
-    if (lastAssistant && lastAssistant.status !== "pending" && pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-      setSending(false);
-    }
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+  /**
+   * Poll for response completion.
+   * Uses setTimeout chaining (not setInterval) — each poll waits for the
+   * previous one to complete before scheduling the next.
+   * Driven by the backend's message status field: polls until no assistant
+   * message has status "pending".
+   */
+  const startPolling = useCallback(() => {
+    if (!id || !activeConvId) return;
+
+    const poll = async () => {
+      try {
+        const resp = await axiosClient.get(
+          `/subjects/${id}/conversations/${activeConvId}/messages`
+        );
+        const msgs: Message[] = resp.data;
+        setMessages(msgs);
+
+        // Check if any assistant message is still pending
+        const hasPending = msgs.some(
+          (m) => m.role === "assistant" && m.status === "pending"
+        );
+
+        if (hasPending) {
+          // Schedule next poll — setTimeout chaining ensures no overlap
+          pollTimeoutRef.current = setTimeout(poll, 1500);
+        } else {
+          // Done — assistant has responded (ok or error)
+          pollTimeoutRef.current = null;
+          setSending(false);
+        }
+      } catch {
+        // On error, stop polling
+        pollTimeoutRef.current = null;
+        setSending(false);
+      }
     };
-  }, [messages, fetchMessages]);
+
+    // Start first poll after a short delay to let backend create the messages
+    pollTimeoutRef.current = setTimeout(poll, 1000);
+  }, [id, activeConvId]);
 
   const createConversation = async (mode: "update" | "query") => {
     if (!id) return;
@@ -135,7 +175,7 @@ export default function SubjectChat() {
     const content = input.trim();
     setInput("");
 
-    // Optimistic: add user message immediately
+    // Optimistic: show user message immediately
     const tempMsg: Message = {
       message_id: Date.now(),
       conversation_id: activeConvId,
@@ -149,9 +189,12 @@ export default function SubjectChat() {
     setMessages((prev) => [...prev, tempMsg]);
 
     try {
-      await axiosClient.post(`/subjects/${id}/conversations/${activeConvId}/messages`, { content });
-      // Fetch immediately to get the user message + pending assistant message from DB
-      setTimeout(fetchMessages, 500);
+      await axiosClient.post(
+        `/subjects/${id}/conversations/${activeConvId}/messages`,
+        { content }
+      );
+      // Start polling — will replace optimistic message with real data
+      startPolling();
     } catch {
       setSending(false);
     }
