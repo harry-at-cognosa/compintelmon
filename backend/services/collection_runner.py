@@ -148,6 +148,7 @@ async def _run_collection_inner(session, source_id: int) -> None:
     # Save collected data to file
     if result.status == "ok" and result.raw_content:
         _save_collected_data(
+            group_id=subject.group_id,
             gsubject_id=source.gsubject_id,
             category_key=source.category_key,
             run_id=run.run_id,
@@ -186,13 +187,14 @@ async def _run_collection_inner(session, source_id: int) -> None:
 
 
 def _save_collected_data(
+    group_id: int,
     gsubject_id: int,
     category_key: str,
     run_id: int,
     result: CollectionResult,
 ) -> None:
     """Save collected data as a JSON file."""
-    dir_path = os.path.join(DATA_DIR, str(gsubject_id))
+    dir_path = os.path.join(DATA_DIR, str(group_id), str(gsubject_id))
     os.makedirs(dir_path, exist_ok=True)
 
     file_path = os.path.join(dir_path, f"{category_key}_{run_id}.json")
