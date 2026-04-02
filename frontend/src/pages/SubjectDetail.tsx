@@ -348,11 +348,27 @@ export default function SubjectDetail() {
         {canManage && (
           <>
             <Button
-              variant="primary"
+              variant="outline-primary"
               size="sm"
               className="ms-3"
+              onClick={discoverSources}
+              disabled={discovering}
+              title="Run Signal Agent to discover source URLs from the subject name"
+            >
+              {discovering ? (
+                <Spinner animation="border" size="sm" className="me-1" />
+              ) : (
+                <Search className="me-1" />
+              )}
+              Discover
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="ms-2"
               onClick={collectAll}
               disabled={collecting || sources.every((s) => !s.enabled)}
+              title="Collect data from all enabled sources"
             >
               {collecting ? (
                 <Spinner animation="border" size="sm" className="me-1" />
@@ -362,25 +378,12 @@ export default function SubjectDetail() {
               Collect All
             </Button>
             <Button
-              variant="outline-primary"
-              size="sm"
-              className="ms-2"
-              onClick={discoverSources}
-              disabled={discovering}
-            >
-              {discovering ? (
-                <Spinner animation="border" size="sm" className="me-1" />
-              ) : (
-                <Search className="me-1" />
-              )}
-              Discover Sources
-            </Button>
-            <Button
               variant="outline-info"
               size="sm"
               className="ms-2"
               onClick={analyzeSubject}
               disabled={analyzing}
+              title="Run Fusion Agent to extract competitive intelligence from collected data"
             >
               {analyzing ? (
                 <Spinner animation="border" size="sm" className="me-1" />
@@ -551,6 +554,7 @@ export default function SubjectDetail() {
                         generateReport(a.analysis_id);
                       }}
                       disabled={generatingReport}
+                      title="Run Quill Agent to generate a battlecard report"
                     >
                       {generatingReport ? <Spinner size="sm" /> : <><FileText size={14} className="me-1" />Generate Report</>}
                     </Button>
