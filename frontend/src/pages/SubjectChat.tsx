@@ -94,12 +94,14 @@ export default function SubjectChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Polling for pending messages
+  // Polling while sending — stop when assistant responds
   useEffect(() => {
-    const hasPending = messages.some((m) => m.role === "assistant" && m.status === "pending");
-    if (hasPending && !pollRef.current) {
+    if (sending && !pollRef.current) {
       pollRef.current = setInterval(fetchMessages, 2000);
-    } else if (!hasPending && pollRef.current) {
+    }
+    // Check if assistant has responded (non-pending)
+    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+    if (lastAssistant && lastAssistant.status !== "pending" && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
       setSending(false);
@@ -148,8 +150,8 @@ export default function SubjectChat() {
 
     try {
       await axiosClient.post(`/subjects/${id}/conversations/${activeConvId}/messages`, { content });
-      // Polling will pick up the real messages including the pending assistant response
-      setTimeout(fetchMessages, 1000);
+      // Fetch immediately to get the user message + pending assistant message from DB
+      setTimeout(fetchMessages, 500);
     } catch {
       setSending(false);
     }
