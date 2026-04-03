@@ -381,8 +381,8 @@ def _product_templates() -> list[dict]:
             "collection_tool": "crawl4ai", "priority": 7,
             "description": "Monitor G2, Capterra, Product Hunt, app stores for reviews.",
             "signal_instructions": "Monitor G2, Capterra, Product Hunt, and app stores for product reviews. Track average rating, review volume trends, and extract common themes.",
-            "user_inputs_schema": {"type": "object", "properties": {"review_urls": {"type": "array", "items": {"type": "string"}, "title": "Review Page URLs"}}},
-            "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
+            "user_inputs_schema": {"type": "object", "properties": {"review_url": {"type": "string", "format": "uri", "title": "Review Page URL (G2, Capterra, etc.)"}}},
+            "collection_config": {"tool": "crawl4ai", "url_template": "{review_url}", "timeout_seconds": 30},
         },
         {
             "subject_type_id": T, "category_key": "product_social", "category_name": "Social Mentions",
@@ -408,8 +408,8 @@ def _product_templates() -> list[dict]:
             "collection_tool": "crawl4ai", "priority": 10,
             "description": "Monitor 'vs competitor' pages for positioning and feature highlights.",
             "signal_instructions": "Monitor the product's 'vs competitor' pages. Track positioning, highlighted features, and which competitors are addressed.",
-            "user_inputs_schema": {"type": "object", "properties": {"comparison_urls": {"type": "array", "items": {"type": "string"}, "title": "Comparison Page URLs"}}},
-            "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
+            "user_inputs_schema": {"type": "object", "properties": {"comparison_url": {"type": "string", "format": "uri", "title": "Comparison Page URL"}}},
+            "collection_config": {"tool": "crawl4ai", "url_template": "{comparison_url}", "timeout_seconds": 30},
         },
         {
             "subject_type_id": T, "category_key": "news_product", "category_name": "Product News Coverage",
@@ -495,8 +495,8 @@ def _service_templates() -> list[dict]:
             "collection_tool": "crawl4ai", "priority": 7,
             "description": "G2, Capterra, TrustRadius rating trends.",
             "signal_instructions": "Monitor G2, Capterra, TrustRadius for service reviews. Track rating trends and common themes.",
-            "user_inputs_schema": {"type": "object", "properties": {"review_urls": {"type": "array", "items": {"type": "string"}, "title": "Review URLs"}}},
-            "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
+            "user_inputs_schema": {"type": "object", "properties": {"review_url": {"type": "string", "format": "uri", "title": "Review Page URL (G2, Capterra, TrustRadius)"}}},
+            "collection_config": {"tool": "crawl4ai", "url_template": "{review_url}", "timeout_seconds": 30},
         },
         {
             "subject_type_id": T, "category_key": "service_social", "category_name": "Social Mentions",
@@ -609,8 +609,8 @@ def _topic_templates() -> list[dict]:
             "collection_tool": "crawl4ai", "priority": 7,
             "description": "Monitor conference websites for events, speakers, and topic tracks.",
             "signal_instructions": "Monitor conference websites and event listing pages for upcoming events, speaker lineups, and topic tracks.",
-            "user_inputs_schema": {"type": "object", "properties": {"event_urls": {"type": "array", "items": {"type": "string"}, "title": "Event Page URLs"}}},
-            "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
+            "user_inputs_schema": {"type": "object", "properties": {"event_url": {"type": "string", "format": "uri", "title": "Event/Conference Page URL"}}},
+            "collection_config": {"tool": "crawl4ai", "url_template": "{event_url}", "timeout_seconds": 30},
         },
         {
             "subject_type_id": T, "category_key": "topic_github", "category_name": "GitHub / OSS Activity",
