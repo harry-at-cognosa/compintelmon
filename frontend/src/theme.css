@@ -1,0 +1,38 @@
+/* Theme color utility classes — driven by CSS variables injected by useSettingsStore */
+
+:root {
+  --theme-color-50: #f8fafc;
+  --theme-color-100: #f1f5f9;
+  --theme-color-200: #e2e8f0;
+  --theme-color-300: #cbd5e1;
+  --theme-color-400: #94a3b8;
+  --theme-color-500: #64748b;
+  --theme-color-600: #475569;
+  --theme-color-700: #334155;
+  --theme-color-800: #1e293b;
+  --theme-color-900: #0f172a;
+}
+
+.bg-tc-50  { background-color: var(--theme-color-50) !important; }
+.bg-tc-100 { background-color: var(--theme-color-100) !important; }
+.bg-tc-200 { background-color: var(--theme-color-200) !important; }
+.bg-tc-300 { background-color: var(--theme-color-300) !important; }
+.bg-tc-400 { background-color: var(--theme-color-400) !important; }
+.bg-tc-500 { background-color: var(--theme-color-500) !important; }
+.bg-tc-600 { background-color: var(--theme-color-600) !important; }
+.bg-tc-700 { background-color: var(--theme-color-700) !important; }
+.bg-tc-800 { background-color: var(--theme-color-800) !important; }
+.bg-tc-900 { background-color: var(--theme-color-900) !important; }
+
+.text-tc-50  { color: var(--theme-color-50) !important; }
+.text-tc-100 { color: var(--theme-color-100) !important; }
+.text-tc-200 { color: var(--theme-color-200) !important; }
+.text-tc-300 { color: var(--theme-color-300) !important; }
+
+/* Navbar hover effects */
+.nav-hover-glow {
+  transition: background-color 0.2s ease;
+}
+.nav-hover-glow:hover {
+  background-color: var(--theme-color-400) !important;
+}

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { API_URL } from "../api/apiURL";
+import getColor from "../api/getColor";
 
 interface SettingsState {
   app_title: string;
@@ -7,6 +8,14 @@ interface SettingsState {
   instance_label: string;
   loaded: boolean;
   fetchSettings: () => Promise<void>;
+}
+
+function applyThemeColors(colorName: string) {
+  const root = document.documentElement;
+  const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
+  shades.forEach((shade) => {
+    root.style.setProperty(`--theme-color-${shade}`, getColor(colorName, shade));
+  });
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -21,15 +30,17 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         const data: { name: string; value: string }[] = await res.json();
         const map: Record<string, string> = {};
         data.forEach((s) => (map[s.name] = s.value));
+        const color = map.navbar_color || "slate";
+        applyThemeColors(color);
         set({
           app_title: map.app_title || "CompIntel Monitor",
-          navbar_color: map.navbar_color || "slate",
+          navbar_color: color,
           instance_label: map.instance_label || "",
           loaded: true,
         });
       }
     } catch {
-      // Use defaults on error
+      applyThemeColors("slate");
     }
   },
 }));
