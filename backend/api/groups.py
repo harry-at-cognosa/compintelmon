@@ -42,11 +42,16 @@ async def update_group(
     session: AsyncSession = Depends(async_get_session),
 ):
     _require_superuser(user)
-    if payload.group_name is None:
-        raise HTTPException(status_code=400, detail="group_name required")
-    group = await ApiGroupsTable(session).update_group(group_id, payload.group_name)
+    table = ApiGroupsTable(session)
+    group = await table.get_group_by_group_id(group_id)
     if group is None:
         raise HTTPException(status_code=404, detail="Group not found")
+    if payload.group_name is not None:
+        group.group_name = payload.group_name
+    if payload.is_active is not None:
+        group.is_active = payload.is_active
+    await session.commit()
+    await session.refresh(group)
     return group
 
 

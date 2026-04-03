@@ -8,6 +8,8 @@ import Settings from "./pages/Settings";
 import GroupSettings from "./pages/GroupSettings";
 import SubjectChat from "./pages/SubjectChat";
 import AdminSubjectTypes from "./pages/AdminSubjectTypes";
+import ManageGroups from "./pages/ManageGroups";
+import ManageUsers from "./pages/ManageUsers";
 import Logout from "./pages/Logout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -44,6 +46,10 @@ export const Router = createBrowserRouter([
             path: "group-settings",
             element: <GroupSettings />,
           },
+          {
+            path: "users",
+            element: <ManageUsers />,
+          },
         ],
       },
       {
@@ -57,6 +63,10 @@ export const Router = createBrowserRouter([
           {
             path: "subject-types",
             element: <AdminSubjectTypes />,
+          },
+          {
+            path: "groups",
+            element: <ManageGroups />,
           },
         ],
       },

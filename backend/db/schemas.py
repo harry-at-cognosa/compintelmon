@@ -68,6 +68,7 @@ class UsersMe(BaseModel):
 class GroupRead(BaseModel):
     group_id: int
     group_name: str
+    is_active: bool
     deleted: int
     created_at: datetime
 
@@ -81,6 +82,50 @@ class GroupCreate(BaseModel):
 
 class GroupUpdate(BaseModel):
     group_name: str | None = None
+    is_active: bool | None = None
+
+
+# ── User management schemas ──────────────────────────────────
+
+
+class UserManageRead(BaseModel):
+    user_id: int
+    user_name: str
+    full_name: str
+    email: str
+    group_id: int
+    is_active: bool
+    is_superuser: bool
+    is_groupadmin: bool
+    is_subjectmanager: bool
+    is_verified: bool
+    created_at: datetime | None
+    last_seen: datetime | None
+
+    class Config:
+        from_attributes = True
+
+
+class UserManageCreate(BaseModel):
+    user_name: str = Field(..., min_length=3, max_length=32)
+    full_name: str = ""
+    email: str = Field(..., min_length=5)
+    password: str = Field(..., min_length=4)
+    group_id: int
+    is_active: bool = True
+    is_superuser: bool = False
+    is_groupadmin: bool = False
+    is_subjectmanager: bool = False
+
+
+class UserManageUpdate(BaseModel):
+    full_name: str | None = None
+    email: str | None = None
+    group_id: int | None = None
+    is_active: bool | None = None
+    is_superuser: bool | None = None
+    is_groupadmin: bool | None = None
+    is_subjectmanager: bool | None = None
 
 
 # ── Settings schemas ─────────────────────────────���────────────

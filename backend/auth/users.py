@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config import SECRET, API_URL_PREFIX
 from backend.db.session import async_get_session
-from backend.db.models import User
+from backend.db.models import User, ApiGroups
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
@@ -43,6 +43,17 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
             return None
         if updated_password_hash is not None:
             await self.user_db.update(user, {"hashed_password": updated_password_hash})
+
+        # Check group is_active (superusers bypass this check)
+        if not user.is_superuser:
+            session = self.user_db.session
+            result = await session.execute(
+                select(ApiGroups.is_active).where(ApiGroups.group_id == user.group_id)
+            )
+            group_active = result.scalar_one_or_none()
+            if group_active is not True:
+                return None
+
         return user
 
 

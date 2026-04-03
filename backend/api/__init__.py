@@ -14,6 +14,7 @@ from backend.api.dashboard import router_dashboard
 from backend.api.analyses import router_analyses
 from backend.api.conversations import router_conversations
 from backend.api.subject_types import router_subject_types
+from backend.api.manage_users import router_manage_users
 
 api_router = APIRouter(prefix=API_URL_PREFIX)
 
@@ -36,3 +37,4 @@ api_router.include_router(router_dashboard)
 api_router.include_router(router_analyses, tags=["Analyses"])
 api_router.include_router(router_conversations, tags=["Conversations"])
 api_router.include_router(router_subject_types, tags=["Subject Types"])
+api_router.include_router(router_manage_users, tags=["Manage Users"])

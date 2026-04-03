@@ -108,6 +108,8 @@ async def setup_database():
         # Reset sequence past the seeded IDs
         from sqlalchemy import text
         await session.execute(text("SELECT setval('subject_types_subj_type_id_seq', 4)"))
+        await session.execute(text("SELECT setval('api_users_user_id_seq', 2)"))
+        await session.execute(text("SELECT setval('api_groups_group_id_seq', 2)"))
         await session.flush()
 
         # Seed playbook templates
