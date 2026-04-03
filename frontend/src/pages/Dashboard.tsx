@@ -10,6 +10,12 @@ interface DashboardStats {
   scheduler_running: boolean;
 }
 
+interface HealthCheck {
+  name: string;
+  status: string;
+  detail: string;
+}
+
 interface RecentRun {
   run_id: number;
   subject_name: string;
@@ -45,6 +51,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [runs, setRuns] = useState<RecentRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [health, setHealth] = useState<HealthCheck[]>([]);
   const [toggling, setToggling] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -52,10 +59,12 @@ export default function Dashboard() {
     Promise.all([
       axiosClient.get("/dashboard/stats"),
       axiosClient.get("/dashboard/recent-runs?limit=10"),
+      axiosClient.get("/dashboard/health"),
     ])
-      .then(([statsRes, runsRes]) => {
+      .then(([statsRes, runsRes, healthRes]) => {
         setStats(statsRes.data);
         setRuns(runsRes.data);
+        setHealth(healthRes.data.checks || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -169,6 +178,31 @@ export default function Dashboard() {
           </Card>
         </Col>
       </Row>
+
+      {health.length > 0 && (
+        <>
+          <h5>System Health</h5>
+          <Table size="sm" className="mb-4" style={{ maxWidth: 500 }}>
+            <tbody>
+              {health.map((h) => (
+                <tr key={h.name}>
+                  <td style={{ width: 30 }}>
+                    {h.status === "ok" ? (
+                      <Badge bg="success" style={{ fontSize: "0.7em" }}>OK</Badge>
+                    ) : h.status === "warning" ? (
+                      <Badge bg="warning" text="dark" style={{ fontSize: "0.7em" }}>WARN</Badge>
+                    ) : (
+                      <Badge bg="danger" style={{ fontSize: "0.7em" }}>ERR</Badge>
+                    )}
+                  </td>
+                  <td><strong>{h.name}</strong></td>
+                  <td><small className="text-muted">{h.detail}</small></td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </>
+      )}
 
       <h5>Recent Activity</h5>
       {runs.length === 0 ? (
