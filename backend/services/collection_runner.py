@@ -13,6 +13,7 @@ from backend.db.session import SqlAsyncSession
 from backend.db.tables.subject_sources import SubjectSourcesTable
 from backend.db.tables.subject_source_runs import SubjectSourceRunsTable
 from backend.db.tables.group_subjects import GroupSubjectsTable
+from backend.db.tables.group_settings import GroupSettingsTable
 from backend.collectors.base import (
     COLLECTOR_REGISTRY,
     CollectionResult,
@@ -23,6 +24,7 @@ from backend.collectors.base import (
 import backend.collectors.httpx_collector  # noqa: F401
 import backend.collectors.feedparser_collector  # noqa: F401
 import backend.collectors.crawl4ai_collector  # noqa: F401
+import backend.collectors.praw_collector  # noqa: F401
 
 from backend.services.logger_service import get_logger
 
@@ -63,6 +65,12 @@ async def _run_collection_inner(session, source_id: int) -> None:
         "gsubject_id": str(subject.gsubject_id),
     }
 
+    # Load group settings (for API keys like reddit_client_id, twitter_bearer_token)
+    group_settings = {}
+    settings_list = await GroupSettingsTable(session).get_all_for_group(subject.group_id)
+    for gs in settings_list:
+        group_settings[gs.name] = gs.value
+
     # Check if collector exists
     tool = source.collection_tool
     collector = COLLECTOR_REGISTRY.get(tool)
@@ -84,10 +92,26 @@ async def _run_collection_inner(session, source_id: int) -> None:
         )
         return
 
-    # Interpolate config
+    # Check if required group settings are configured
+    raw_config = source.collection_config or {}
+    required_setting = raw_config.get("requires_group_setting")
+    if required_setting and required_setting not in group_settings:
+        run = await runs_table.create_run(source_id, status="error")
+        error_msg = f"Missing group setting: {required_setting}"
+        await runs_table.update_run(
+            run.run_id, finished_at=datetime.now(timezone.utc),
+            status="error", error_detail=error_msg,
+        )
+        await sources_table.update_source(
+            source_id, last_collected_at=datetime.now(timezone.utc),
+            last_status="error", last_status_text=error_msg,
+        )
+        return
+
+    # Interpolate config (merge user_inputs + subject_metadata + group_settings)
     config = interpolate_config(
-        source.collection_config or {},
-        source.user_inputs or {},
+        raw_config,
+        {**(source.user_inputs or {}), **group_settings},
         subject_metadata,
     )
 

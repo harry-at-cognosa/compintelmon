@@ -15,6 +15,7 @@ greenlet>=3.0.0
 # Collection tools
 feedparser>=6.0.0
 crawl4ai>=0.4.0
+praw>=7.7.0
 
 # Scheduling
 apscheduler>=3.10.0,<4
