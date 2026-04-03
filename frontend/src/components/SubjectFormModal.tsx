@@ -9,6 +9,13 @@ interface Subject {
   enabled: boolean;
 }
 
+interface SubjectType {
+  subj_type_id: number;
+  subj_type_name: string;
+  subj_type_desc: string;
+  subj_type_enabled: boolean;
+}
+
 interface Props {
   show: boolean;
   onHide: () => void;
@@ -22,8 +29,25 @@ export default function SubjectFormModal({ show, onHide, onSaved, subject }: Pro
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([]);
 
   const isEdit = !!subject;
+
+  // Fetch subject types from API
+  useEffect(() => {
+    if (show && subjectTypes.length === 0) {
+      axiosClient
+        .get("/subject-types")
+        .then((res) => {
+          const types = res.data.filter((t: SubjectType) => t.subj_type_enabled);
+          setSubjectTypes(types);
+          if (!subject && types.length > 0) {
+            setType(types[0].subj_type_name);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [show]);
 
   useEffect(() => {
     if (subject) {
@@ -32,7 +56,9 @@ export default function SubjectFormModal({ show, onHide, onSaved, subject }: Pro
       setEnabled(subject.enabled);
     } else {
       setName("");
-      setType("company");
+      if (subjectTypes.length > 0) {
+        setType(subjectTypes[0].subj_type_name);
+      }
       setEnabled(true);
     }
     setError("");
@@ -89,10 +115,11 @@ export default function SubjectFormModal({ show, onHide, onSaved, subject }: Pro
           <Form.Group className="mb-3">
             <Form.Label>Type</Form.Label>
             <Form.Select value={type} onChange={(e) => setType(e.target.value)}>
-              <option value="company">Company</option>
-              <option value="product">Product</option>
-              <option value="service">Service</option>
-              <option value="topic">Topic</option>
+              {subjectTypes.map((t) => (
+                <option key={t.subj_type_id} value={t.subj_type_name}>
+                  {t.subj_type_name}
+                </option>
+              ))}
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">

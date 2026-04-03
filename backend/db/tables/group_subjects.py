@@ -3,12 +3,22 @@ from collections.abc import Sequence
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import GroupSubjects, GSubjectTypeEnum
+from backend.db.models import GroupSubjects, SubjectTypes
 
 
 class GroupSubjectsTable:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def _resolve_type_id(self, type_name: str) -> int:
+        """Resolve a subject type name to its FK ID."""
+        result = await self.session.execute(
+            select(SubjectTypes.subj_type_id).where(SubjectTypes.subj_type_name == type_name)
+        )
+        type_id = result.scalar_one_or_none()
+        if type_id is None:
+            raise ValueError(f"Unknown subject type: {type_name}")
+        return type_id
 
     async def count_all(self) -> int:
         result = await self.session.execute(
@@ -40,12 +50,13 @@ class GroupSubjectsTable:
     async def create_subject(
         self, group_id: int, gsubject_name: str, gsubject_type: str, enabled: bool = True
     ) -> GroupSubjects:
+        type_id = await self._resolve_type_id(gsubject_type)
         seqn = await self._next_seqn(group_id)
         subject = GroupSubjects(
             group_id=group_id,
             gsubject_seqn=seqn,
             gsubject_name=gsubject_name,
-            gsubject_type=GSubjectTypeEnum(gsubject_type),
+            gsubject_type_id=type_id,
             enabled=enabled,
         )
         self.session.add(subject)
@@ -60,7 +71,9 @@ class GroupSubjectsTable:
         for key, value in kwargs.items():
             if value is not None and hasattr(subject, key):
                 if key == "gsubject_type":
-                    value = GSubjectTypeEnum(value)
+                    # Resolve name to FK ID
+                    subject.gsubject_type_id = await self._resolve_type_id(value)
+                    continue
                 setattr(subject, key, value)
         await self.session.commit()
         await self.session.refresh(subject)

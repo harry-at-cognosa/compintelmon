@@ -152,8 +152,31 @@ class SubjectReadWithSources(SubjectRead):
 # ── Playbook template schemas ────────────────────────────────
 
 
+class SubjectTypeRead(BaseModel):
+    subj_type_id: int
+    subj_type_name: str
+    subj_type_desc: str
+    subj_type_enabled: bool
+
+    class Config:
+        from_attributes = True
+
+
+class SubjectTypeCreate(BaseModel):
+    subj_type_name: str = Field(..., min_length=1, max_length=64)
+    subj_type_desc: str = ""
+    subj_type_enabled: bool = True
+
+
+class SubjectTypeUpdate(BaseModel):
+    subj_type_name: str | None = None
+    subj_type_desc: str | None = None
+    subj_type_enabled: bool | None = None
+
+
 class PlaybookTemplateRead(BaseModel):
     template_id: int
+    subject_type_id: int
     subject_type: str
     category_key: str
     category_name: str
@@ -170,6 +193,40 @@ class PlaybookTemplateRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PlaybookTemplateCreate(BaseModel):
+    subject_type_id: int
+    category_key: str = Field(..., max_length=64)
+    category_name: str = Field(..., max_length=128)
+    category_group: str = Field(..., max_length=64)
+    description: str = ""
+    default_enabled: bool = True
+    default_frequency_minutes: int = 360
+    collection_tool: str = Field(..., max_length=32)
+    collection_config: dict = {}
+    signal_instructions: str = ""
+    user_inputs_schema: dict = {}
+    priority: int = 0
+
+
+class PlaybookTemplateUpdate(BaseModel):
+    category_key: str | None = None
+    category_name: str | None = None
+    category_group: str | None = None
+    description: str | None = None
+    default_enabled: bool | None = None
+    default_frequency_minutes: int | None = None
+    collection_tool: str | None = None
+    collection_config: dict | None = None
+    signal_instructions: str | None = None
+    user_inputs_schema: dict | None = None
+    priority: int | None = None
+
+
+class PlaybookTemplateClone(BaseModel):
+    target_subject_type_id: int
+    new_category_key: str | None = None
 
 
 # ── Subject source schemas ────────────────────────────────────

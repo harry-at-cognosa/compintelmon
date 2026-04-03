@@ -38,7 +38,7 @@ async def _run_analysis_inner(session, gsubject_id: int) -> None:
         return
 
     subject_name = subject.gsubject_name
-    subject_type = subject.gsubject_type.value if hasattr(subject.gsubject_type, "value") else str(subject.gsubject_type)
+    subject_type = subject.gsubject_type
 
     # Load sources
     sources = await sources_table.get_by_subject(gsubject_id)

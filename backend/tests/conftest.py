@@ -35,7 +35,7 @@ session_mod.sql_async_engine = test_engine
 session_mod.SqlAsyncSession = TestSession
 
 from backend.db import Base
-from backend.db.models import ApiGroups, ApiSettings, PlaybookTemplates, User
+from backend.db.models import ApiGroups, ApiSettings, PlaybookTemplates, SubjectTypes, User
 from backend.auth.users import password_helper
 from backend.db.playbook_defaults import PLAYBOOK_TEMPLATE_DEFAULTS
 
@@ -96,6 +96,19 @@ async def setup_database():
             ApiSettings(name="navbar_color", value="slate"),
             ApiSettings(name="instance_label", value="TEST"),
         ])
+
+        # Seed subject types (must be before playbook templates)
+        session.add_all([
+            SubjectTypes(subj_type_id=1, subj_type_name="company", subj_type_desc="Company subjects"),
+            SubjectTypes(subj_type_id=2, subj_type_name="product", subj_type_desc="Product subjects"),
+            SubjectTypes(subj_type_id=3, subj_type_name="service", subj_type_desc="Service subjects"),
+            SubjectTypes(subj_type_id=4, subj_type_name="topic", subj_type_desc="Topic subjects"),
+        ])
+        await session.flush()
+        # Reset sequence past the seeded IDs
+        from sqlalchemy import text
+        await session.execute(text("SELECT setval('subject_types_subj_type_id_seq', 4)"))
+        await session.flush()
 
         # Seed playbook templates
         for tpl_data in PLAYBOOK_TEMPLATE_DEFAULTS:

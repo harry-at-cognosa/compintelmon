@@ -45,7 +45,7 @@ async def _run_report_inner(
         return
 
     subject_name = subject.gsubject_name
-    subject_type = subject.gsubject_type.value if hasattr(subject.gsubject_type, "value") else str(subject.gsubject_type)
+    subject_type = subject.gsubject_type
 
     # Create report record
     report = await reports_table.create(

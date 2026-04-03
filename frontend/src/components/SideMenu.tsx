@@ -40,6 +40,12 @@ export default function SideMenu() {
             <Nav.Link>Global Settings</Nav.Link>
           </LinkContainer>
         )}
+
+        {auth.is_superuser && (
+          <LinkContainer to="/app/su/subject-types">
+            <Nav.Link>Subject Types</Nav.Link>
+          </LinkContainer>
+        )}
       </Nav>
     </div>
   );

@@ -46,7 +46,7 @@ async def _run_discovery_inner(session, gsubject_id: int) -> None:
         return
 
     subject_name = subject.gsubject_name
-    subject_type = subject.gsubject_type.value if hasattr(subject.gsubject_type, "value") else str(subject.gsubject_type)
+    subject_type = subject.gsubject_type
 
     # Update status to discovering
     await subjects_table.update_subject(

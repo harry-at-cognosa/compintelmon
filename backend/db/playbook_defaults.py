@@ -11,10 +11,10 @@ or search/API-based collection are disabled until those collectors are built.
 
 
 def _company_templates() -> list[dict]:
-    T = "company"
+    T = 1  # company
     return [
         {
-            "subject_type": T, "category_key": "website_main", "category_name": "Corporate Website",
+            "subject_type_id": T, "category_key": "website_main", "category_name": "Corporate Website",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 360,
             "collection_tool": "crawl4ai", "priority": 1,
             "description": "Monitor the company's main website for messaging, positioning, and structural changes.",
@@ -30,7 +30,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{website_url}", "crawl_depth": 0, "extract_mode": "markdown", "max_pages": 1, "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "website_blog", "category_name": "Blog / Newsroom",
+            "subject_type_id": T, "category_key": "website_blog", "category_name": "Blog / Newsroom",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 120,
             "collection_tool": "feedparser", "priority": 2,
             "description": "Monitor company blog and newsroom for announcements and strategy signals.",
@@ -49,7 +49,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "feedparser", "url_template": "{rss_url}", "fallback_tool": "crawl4ai", "fallback_url_template": "{blog_url}", "max_entries": 20},
         },
         {
-            "subject_type": T, "category_key": "website_pricing", "category_name": "Pricing Page",
+            "subject_type_id": T, "category_key": "website_pricing", "category_name": "Pricing Page",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "playwright", "priority": 3,
             "description": "Monitor pricing page for plan, price, and feature changes.",
@@ -65,7 +65,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "playwright", "url_template": "{pricing_url}", "wait_for_selector": "[class*='pricing'], [class*='plan']", "extract_mode": "structured", "timeout_seconds": 45},
         },
         {
-            "subject_type": T, "category_key": "website_changelog", "category_name": "Changelog / Release Notes",
+            "subject_type_id": T, "category_key": "website_changelog", "category_name": "Changelog / Release Notes",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 360,
             "collection_tool": "crawl4ai", "priority": 4,
             "description": "Monitor changelog for new features, fixes, and deprecations.",
@@ -80,7 +80,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{changelog_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "website_careers", "category_name": "Careers / Job Postings",
+            "subject_type_id": T, "category_key": "website_careers", "category_name": "Careers / Job Postings",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 5,
             "description": "Track job listings for hiring patterns and strategic direction signals.",
@@ -97,7 +97,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{careers_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "website_docs", "category_name": "Developer Documentation",
+            "subject_type_id": T, "category_key": "website_docs", "category_name": "Developer Documentation",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 6,
             "description": "Monitor developer docs for API changes and new integrations.",
@@ -112,7 +112,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{docs_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "social_twitter", "category_name": "Twitter / X",
+            "subject_type_id": T, "category_key": "social_twitter", "category_name": "Twitter / X",
             "category_group": "social", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "tweepy", "priority": 7,
             "description": "Monitor official Twitter/X account and brand mentions.",
@@ -128,7 +128,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "tweepy", "mode": "user_timeline", "user_template": "{twitter_handle}", "max_tweets": 50, "requires_group_setting": "twitter_bearer_token"},
         },
         {
-            "subject_type": T, "category_key": "social_linkedin", "category_name": "LinkedIn",
+            "subject_type_id": T, "category_key": "social_linkedin", "category_name": "LinkedIn",
             "category_group": "social", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 8,
             "description": "Monitor LinkedIn company page for employee count and posts.",
@@ -143,7 +143,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{linkedin_url}", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "social_reddit", "category_name": "Reddit Mentions",
+            "subject_type_id": T, "category_key": "social_reddit", "category_name": "Reddit Mentions",
             "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 9,
             "description": "Search Reddit for company mentions, complaints, and comparisons.",
@@ -162,7 +162,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "praw", "search_template": "\"{gsubject_name}\"", "sort": "new", "time_filter": "day", "max_results": 50, "requires_group_setting": "reddit_client_id"},
         },
         {
-            "subject_type": T, "category_key": "news_general", "category_name": "News & Press",
+            "subject_type_id": T, "category_key": "news_general", "category_name": "News & Press",
             "category_group": "news", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "httpx", "priority": 10,
             "description": "Search news sources for company mentions and breaking stories.",
@@ -178,7 +178,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "search_template": "\"{gsubject_name}\"", "sources": ["google_news", "bing_news"]},
         },
         {
-            "subject_type": T, "category_key": "news_press_releases", "category_name": "Press Releases",
+            "subject_type_id": T, "category_key": "news_press_releases", "category_name": "Press Releases",
             "category_group": "news", "default_enabled": False, "default_frequency_minutes": 360,
             "collection_tool": "feedparser", "priority": 11,
             "description": "Monitor PR Newswire, Business Wire for official press releases.",
@@ -193,7 +193,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "feedparser", "sources": ["prnewswire", "businesswire", "globenewswire"]},
         },
         {
-            "subject_type": T, "category_key": "regulatory_sec", "category_name": "SEC Filings",
+            "subject_type_id": T, "category_key": "regulatory_sec", "category_name": "SEC Filings",
             "category_group": "regulatory", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 12,
             "description": "Monitor SEC EDGAR for regulatory filings (US public companies).",
@@ -211,7 +211,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "edgar_xbrl"},
         },
         {
-            "subject_type": T, "category_key": "regulatory_patents", "category_name": "Patent Filings",
+            "subject_type_id": T, "category_key": "regulatory_patents", "category_name": "Patent Filings",
             "category_group": "regulatory", "default_enabled": False, "default_frequency_minutes": 10080,
             "collection_tool": "httpx", "priority": 13,
             "description": "Search patent databases to reveal R&D direction.",
@@ -226,7 +226,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "google_patents"},
         },
         {
-            "subject_type": T, "category_key": "financial_earnings", "category_name": "Earnings & Financials",
+            "subject_type_id": T, "category_key": "financial_earnings", "category_name": "Earnings & Financials",
             "category_group": "financial", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 14,
             "description": "Monitor earnings reports and financial data (public companies).",
@@ -241,7 +241,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "yahoo_finance"},
         },
         {
-            "subject_type": T, "category_key": "community_github", "category_name": "GitHub Activity",
+            "subject_type_id": T, "category_key": "community_github", "category_name": "GitHub Activity",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 360,
             "collection_tool": "httpx", "priority": 15,
             "description": "Monitor GitHub organization for repos, releases, and contributor activity.",
@@ -256,7 +256,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "github", "requires_group_setting": "github_token"},
         },
         {
-            "subject_type": T, "category_key": "community_glassdoor", "category_name": "Employee Reviews",
+            "subject_type_id": T, "category_key": "community_glassdoor", "category_name": "Employee Reviews",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 10080,
             "collection_tool": "crawl4ai", "priority": 16,
             "description": "Monitor Glassdoor review trends and internal sentiment.",
@@ -271,7 +271,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{glassdoor_url}", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "website_status", "category_name": "Service Status Page",
+            "subject_type_id": T, "category_key": "website_status", "category_name": "Service Status Page",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 30,
             "collection_tool": "httpx", "priority": 17,
             "description": "Monitor status page for uptime, incidents, and outages.",
@@ -286,7 +286,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "url_template": "{status_url}", "timeout_seconds": 15},
         },
         {
-            "subject_type": T, "category_key": "review_g2", "category_name": "G2 / Capterra Reviews",
+            "subject_type_id": T, "category_key": "review_g2", "category_name": "G2 / Capterra Reviews",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 10080,
             "collection_tool": "crawl4ai", "priority": 18,
             "description": "Monitor G2 and Capterra for review volume and rating trends.",
@@ -301,7 +301,7 @@ def _company_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{g2_url}", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "web_tech_stack", "category_name": "Technology Stack",
+            "subject_type_id": T, "category_key": "web_tech_stack", "category_name": "Technology Stack",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 43200,
             "collection_tool": "httpx", "priority": 19,
             "description": "Detect technology stack changes via BuiltWith or Wappalyzer.",
@@ -319,10 +319,10 @@ def _company_templates() -> list[dict]:
 
 
 def _product_templates() -> list[dict]:
-    T = "product"
+    T = 2  # product
     return [
         {
-            "subject_type": T, "category_key": "product_page", "category_name": "Product Landing Page",
+            "subject_type_id": T, "category_key": "product_page", "category_name": "Product Landing Page",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 360,
             "collection_tool": "crawl4ai", "priority": 1,
             "description": "Monitor product page for messaging and feature list changes.",
@@ -331,7 +331,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{product_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "product_pricing", "category_name": "Pricing",
+            "subject_type_id": T, "category_key": "product_pricing", "category_name": "Pricing",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "playwright", "priority": 2,
             "description": "Monitor pricing for plan, price, and feature matrix changes.",
@@ -340,7 +340,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "playwright", "url_template": "{pricing_url}", "wait_for_selector": "[class*='pricing']", "timeout_seconds": 45},
         },
         {
-            "subject_type": T, "category_key": "product_changelog", "category_name": "Changelog",
+            "subject_type_id": T, "category_key": "product_changelog", "category_name": "Changelog",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 180,
             "collection_tool": "crawl4ai", "priority": 3,
             "description": "Highest-signal source: track feature releases and deprecations.",
@@ -349,7 +349,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{changelog_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "product_docs", "category_name": "Documentation",
+            "subject_type_id": T, "category_key": "product_docs", "category_name": "Documentation",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 4,
             "description": "Monitor docs for API changes, new integration guides, deprecated features.",
@@ -358,7 +358,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{docs_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "product_api", "category_name": "API Schema",
+            "subject_type_id": T, "category_key": "product_api", "category_name": "API Schema",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 5,
             "description": "Monitor OpenAPI/Swagger specs for endpoint changes.",
@@ -367,7 +367,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "url_template": "{api_docs_url}", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "product_integrations", "category_name": "Integrations / Marketplace",
+            "subject_type_id": T, "category_key": "product_integrations", "category_name": "Integrations / Marketplace",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 6,
             "description": "Track integration count and newly added partners.",
@@ -376,7 +376,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{integrations_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "product_reviews", "category_name": "User Reviews",
+            "subject_type_id": T, "category_key": "product_reviews", "category_name": "User Reviews",
             "category_group": "community", "default_enabled": True, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 7,
             "description": "Monitor G2, Capterra, Product Hunt, app stores for reviews.",
@@ -385,7 +385,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "product_social", "category_name": "Social Mentions",
+            "subject_type_id": T, "category_key": "product_social", "category_name": "Social Mentions",
             "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 8,
             "description": "Search Twitter/X and Reddit for product mentions and sentiment.",
@@ -394,7 +394,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "praw", "search_template": "\"{gsubject_name}\"", "sort": "new", "max_results": 50},
         },
         {
-            "subject_type": T, "category_key": "product_support", "category_name": "Support Forums",
+            "subject_type_id": T, "category_key": "product_support", "category_name": "Support Forums",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 360,
             "collection_tool": "crawl4ai", "priority": 9,
             "description": "Monitor support forums for common complaints and feature requests.",
@@ -403,7 +403,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{forum_url}", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "product_competitors", "category_name": "Competitor Comparison Pages",
+            "subject_type_id": T, "category_key": "product_competitors", "category_name": "Competitor Comparison Pages",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 10,
             "description": "Monitor 'vs competitor' pages for positioning and feature highlights.",
@@ -412,7 +412,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "news_product", "category_name": "Product News Coverage",
+            "subject_type_id": T, "category_key": "news_product", "category_name": "Product News Coverage",
             "category_group": "news", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "httpx", "priority": 11,
             "description": "Search tech news for product reviews and announcements.",
@@ -421,7 +421,7 @@ def _product_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "search_template": "\"{gsubject_name}\"", "sources": ["google_news"]},
         },
         {
-            "subject_type": T, "category_key": "product_hunt", "category_name": "Product Hunt",
+            "subject_type_id": T, "category_key": "product_hunt", "category_name": "Product Hunt",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 12,
             "description": "Monitor Product Hunt for launches and community discussion.",
@@ -433,10 +433,10 @@ def _product_templates() -> list[dict]:
 
 
 def _service_templates() -> list[dict]:
-    T = "service"
+    T = 3  # service
     return [
         {
-            "subject_type": T, "category_key": "service_page", "category_name": "Service Landing Page",
+            "subject_type_id": T, "category_key": "service_page", "category_name": "Service Landing Page",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 360,
             "collection_tool": "crawl4ai", "priority": 1,
             "description": "Monitor service page for positioning and messaging changes.",
@@ -445,7 +445,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{service_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "service_pricing", "category_name": "Pricing / Plans",
+            "subject_type_id": T, "category_key": "service_pricing", "category_name": "Pricing / Plans",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "playwright", "priority": 2,
             "description": "Monitor pricing, SLA terms, and usage-based pricing.",
@@ -454,7 +454,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "playwright", "url_template": "{pricing_url}", "timeout_seconds": 45},
         },
         {
-            "subject_type": T, "category_key": "service_status", "category_name": "Status / Uptime",
+            "subject_type_id": T, "category_key": "service_status", "category_name": "Status / Uptime",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 30,
             "collection_tool": "httpx", "priority": 3,
             "description": "Monitor uptime, incidents, and maintenance windows.",
@@ -463,7 +463,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "url_template": "{status_url}", "timeout_seconds": 15},
         },
         {
-            "subject_type": T, "category_key": "service_docs", "category_name": "Documentation",
+            "subject_type_id": T, "category_key": "service_docs", "category_name": "Documentation",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 4,
             "description": "Monitor for new features, API changes, and deprecation notices.",
@@ -472,7 +472,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{docs_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "service_changelog", "category_name": "Changelog",
+            "subject_type_id": T, "category_key": "service_changelog", "category_name": "Changelog",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 360,
             "collection_tool": "crawl4ai", "priority": 5,
             "description": "Feature releases, infrastructure changes, deprecations.",
@@ -481,7 +481,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{changelog_url}", "extract_mode": "markdown", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "service_blog", "category_name": "Blog",
+            "subject_type_id": T, "category_key": "service_blog", "category_name": "Blog",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 120,
             "collection_tool": "feedparser", "priority": 6,
             "description": "Announcements, case studies, roadmap signals, partnerships.",
@@ -490,7 +490,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "feedparser", "url_template": "{rss_url}", "fallback_tool": "crawl4ai", "fallback_url_template": "{blog_url}", "max_entries": 20},
         },
         {
-            "subject_type": T, "category_key": "service_reviews", "category_name": "Reviews & Ratings",
+            "subject_type_id": T, "category_key": "service_reviews", "category_name": "Reviews & Ratings",
             "category_group": "community", "default_enabled": True, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 7,
             "description": "G2, Capterra, TrustRadius rating trends.",
@@ -499,7 +499,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "service_social", "category_name": "Social Mentions",
+            "subject_type_id": T, "category_key": "service_social", "category_name": "Social Mentions",
             "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 8,
             "description": "Outage reports, migration stories, feature feedback.",
@@ -508,7 +508,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "praw", "search_template": "\"{gsubject_name}\"", "sort": "new", "max_results": 50},
         },
         {
-            "subject_type": T, "category_key": "service_sla", "category_name": "SLA / Terms of Service",
+            "subject_type_id": T, "category_key": "service_sla", "category_name": "SLA / Terms of Service",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 10080,
             "collection_tool": "crawl4ai", "priority": 9,
             "description": "Detect SLA downgrades and ToS changes (often happen quietly).",
@@ -517,7 +517,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{sla_url}", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "service_compliance", "category_name": "Compliance & Certs",
+            "subject_type_id": T, "category_key": "service_compliance", "category_name": "Compliance & Certs",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 10080,
             "collection_tool": "crawl4ai", "priority": 10,
             "description": "New certifications signal market expansion.",
@@ -526,7 +526,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "url_template": "{compliance_url}", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "news_service", "category_name": "News Coverage",
+            "subject_type_id": T, "category_key": "news_service", "category_name": "News Coverage",
             "category_group": "news", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "httpx", "priority": 11,
             "description": "Outage reports, comparative articles, industry coverage.",
@@ -535,7 +535,7 @@ def _service_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "search_template": "\"{gsubject_name}\"", "sources": ["google_news"]},
         },
         {
-            "subject_type": T, "category_key": "service_integrations", "category_name": "Integrations & Partners",
+            "subject_type_id": T, "category_key": "service_integrations", "category_name": "Integrations & Partners",
             "category_group": "web", "default_enabled": True, "default_frequency_minutes": 1440,
             "collection_tool": "crawl4ai", "priority": 12,
             "description": "New and removed integrations.",
@@ -547,10 +547,10 @@ def _service_templates() -> list[dict]:
 
 
 def _topic_templates() -> list[dict]:
-    T = "topic"
+    T = 4  # topic
     return [
         {
-            "subject_type": T, "category_key": "topic_news", "category_name": "News Coverage",
+            "subject_type_id": T, "category_key": "topic_news", "category_name": "News Coverage",
             "category_group": "news", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "httpx", "priority": 1,
             "description": "Search news sources for topic-related articles and trend shifts.",
@@ -559,7 +559,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "sources": ["google_news", "bing_news"]},
         },
         {
-            "subject_type": T, "category_key": "topic_twitter", "category_name": "Twitter / X Discussion",
+            "subject_type_id": T, "category_key": "topic_twitter", "category_name": "Twitter / X Discussion",
             "category_group": "social", "default_enabled": False, "default_frequency_minutes": 60,
             "collection_tool": "tweepy", "priority": 2,
             "description": "Monitor topic discussion, trending hashtags, and influential voices.",
@@ -568,7 +568,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "tweepy", "mode": "search", "max_tweets": 100, "requires_group_setting": "twitter_bearer_token"},
         },
         {
-            "subject_type": T, "category_key": "topic_reddit", "category_name": "Reddit Discussion",
+            "subject_type_id": T, "category_key": "topic_reddit", "category_name": "Reddit Discussion",
             "category_group": "social", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "praw", "priority": 3,
             "description": "Monitor subreddits for topic discussion — often leads mainstream coverage.",
@@ -577,7 +577,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "praw", "sort": "new", "time_filter": "day", "max_results": 50, "requires_group_setting": "reddit_client_id"},
         },
         {
-            "subject_type": T, "category_key": "topic_blogs", "category_name": "Industry Blogs",
+            "subject_type_id": T, "category_key": "topic_blogs", "category_name": "Industry Blogs",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 360,
             "collection_tool": "feedparser", "priority": 4,
             "description": "Monitor analyst and thought leader blogs via RSS.",
@@ -586,7 +586,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "feedparser", "max_entries": 20},
         },
         {
-            "subject_type": T, "category_key": "topic_research", "category_name": "Research Papers",
+            "subject_type_id": T, "category_key": "topic_research", "category_name": "Research Papers",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 5,
             "description": "Search arXiv, Google Scholar for emerging research.",
@@ -595,7 +595,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "arxiv"},
         },
         {
-            "subject_type": T, "category_key": "topic_regulatory", "category_name": "Regulatory & Policy",
+            "subject_type_id": T, "category_key": "topic_regulatory", "category_name": "Regulatory & Policy",
             "category_group": "regulatory", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 6,
             "description": "Monitor government sites for policy changes and enforcement actions.",
@@ -604,7 +604,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "federal_register"},
         },
         {
-            "subject_type": T, "category_key": "topic_events", "category_name": "Conferences & Events",
+            "subject_type_id": T, "category_key": "topic_events", "category_name": "Conferences & Events",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 10080,
             "collection_tool": "crawl4ai", "priority": 7,
             "description": "Monitor conference websites for events, speakers, and topic tracks.",
@@ -613,7 +613,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "crawl4ai", "timeout_seconds": 30},
         },
         {
-            "subject_type": T, "category_key": "topic_github", "category_name": "GitHub / OSS Activity",
+            "subject_type_id": T, "category_key": "topic_github", "category_name": "GitHub / OSS Activity",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 8,
             "description": "Search GitHub for trending repos and activity spikes.",
@@ -622,7 +622,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "github_search"},
         },
         {
-            "subject_type": T, "category_key": "topic_hacker_news", "category_name": "Hacker News",
+            "subject_type_id": T, "category_key": "topic_hacker_news", "category_name": "Hacker News",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 120,
             "collection_tool": "httpx", "priority": 9,
             "description": "Leading indicator for tech trends and developer sentiment.",
@@ -631,7 +631,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "hn_algolia"},
         },
         {
-            "subject_type": T, "category_key": "topic_wikipedia", "category_name": "Wikipedia Changes",
+            "subject_type_id": T, "category_key": "topic_wikipedia", "category_name": "Wikipedia Changes",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 10,
             "description": "Monitor Wikipedia pages for edits and evolving definitions.",
@@ -640,7 +640,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "httpx", "api": "wikipedia"},
         },
         {
-            "subject_type": T, "category_key": "topic_podcasts", "category_name": "Podcasts & Video",
+            "subject_type_id": T, "category_key": "topic_podcasts", "category_name": "Podcasts & Video",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "httpx", "priority": 11,
             "description": "Monitor podcast RSS feeds and YouTube channels.",
@@ -649,7 +649,7 @@ def _topic_templates() -> list[dict]:
             "collection_config": {"tool": "httpx"},
         },
         {
-            "subject_type": T, "category_key": "topic_newsletters", "category_name": "Newsletters",
+            "subject_type_id": T, "category_key": "topic_newsletters", "category_name": "Newsletters",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
             "collection_tool": "feedparser", "priority": 12,
             "description": "Monitor newsletter archives via RSS — high-signal analyst content.",

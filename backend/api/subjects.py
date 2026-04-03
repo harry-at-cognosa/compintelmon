@@ -56,7 +56,8 @@ async def create_subject(
     count = await SubjectSourcesTable(session).provision_from_templates(
         subject.gsubject_id, payload.gsubject_type
     )
-    return SubjectReadWithSources(**subject.__dict__, sources_provisioned=count)
+    result = SubjectRead.model_validate(subject).model_dump()
+    return SubjectReadWithSources(**result, sources_provisioned=count)
 
 
 @router_subjects.put("/subjects/{gsubject_id}", response_model=SubjectRead)

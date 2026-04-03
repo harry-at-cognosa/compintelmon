@@ -59,7 +59,7 @@ async def _run_collection_inner(session, source_id: int) -> None:
 
     subject_metadata = {
         "gsubject_name": subject.gsubject_name,
-        "gsubject_type": subject.gsubject_type.value if hasattr(subject.gsubject_type, 'value') else str(subject.gsubject_type),
+        "gsubject_type": subject.gsubject_type,
         "gsubject_id": str(subject.gsubject_id),
     }
 

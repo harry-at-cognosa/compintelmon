@@ -60,7 +60,7 @@ async def _run_chat_message_inner(session, conversation_id: int, user_message_id
         return
 
     subject_name = subject.gsubject_name
-    subject_type = subject.gsubject_type.value if hasattr(subject.gsubject_type, "value") else str(subject.gsubject_type)
+    subject_type = subject.gsubject_type
     data_dir = get_subject_data_dir(subject.group_id, subject.gsubject_id)
 
     # Create pending assistant message

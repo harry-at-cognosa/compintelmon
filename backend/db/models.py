@@ -1,12 +1,11 @@
 from datetime import datetime
-import enum
 import uuid
 from typing import TYPE_CHECKING
 
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 from fastapi_users_db_sqlalchemy.generics import GUID
 from sqlalchemy import (
-    Boolean, DateTime, Enum, ForeignKey, Index, Integer, JSON, Text, VARCHAR,
+    Boolean, DateTime, ForeignKey, Index, Integer, JSON, Text, VARCHAR,
     CheckConstraint, UniqueConstraint,
     func, text,
 )
@@ -28,11 +27,13 @@ class ApiGroups(Base):
     group_settings_list: Mapped[list["GroupSettings"]] = relationship("GroupSettings", back_populates="group")
 
 
-class GSubjectTypeEnum(str, enum.Enum):
-    company = "company"
-    product = "product"
-    service = "service"
-    topic = "topic"
+class SubjectTypes(Base):
+    __tablename__ = "subject_types"
+
+    subj_type_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    subj_type_name: Mapped[str] = mapped_column(VARCHAR(64), nullable=False, unique=True)
+    subj_type_desc: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    subj_type_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("'TRUE'"))
 
 
 # Inherits id (UUID), email, hashed_password, is_active, is_superuser, is_verified
@@ -103,8 +104,9 @@ class GroupSubjects(Base):
         nullable=False,
     )
     gsubject_seqn: Mapped[int] = mapped_column(Integer, nullable=False)
-    gsubject_type: Mapped[GSubjectTypeEnum] = mapped_column(
-        Enum(GSubjectTypeEnum, name="gsubject_type_enum", create_constraint=False, native_enum=True),
+    gsubject_type_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("subject_types.subj_type_id", name="fk_group_subjects_subj_type_id"),
         nullable=False,
     )
     gsubject_name: Mapped[str] = mapped_column(VARCHAR, nullable=False, server_default=text("'No subject name'"))
@@ -115,11 +117,15 @@ class GroupSubjects(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("'TRUE'"))
 
     group: Mapped["ApiGroups"] = relationship("ApiGroups", back_populates="group_subjects_list")
+    subject_type_rel: Mapped["SubjectTypes"] = relationship("SubjectTypes", lazy="joined")
     sources_list: Mapped[list["SubjectSources"]] = relationship("SubjectSources", back_populates="subject")
 
+    @property
+    def gsubject_type(self) -> str:
+        return self.subject_type_rel.subj_type_name if self.subject_type_rel else ""
+
     __table_args__ = (
-        # Composite index for group_id + sequence
-        # (declared via Index in __table_args__ for consistency with the SQL schema)
+        Index("ix_group_subjects_type_id", "gsubject_type_id"),
     )
 
 
@@ -127,8 +133,9 @@ class PlaybookTemplates(Base):
     __tablename__ = "playbook_templates"
 
     template_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    subject_type: Mapped[GSubjectTypeEnum] = mapped_column(
-        Enum(GSubjectTypeEnum, name="gsubject_type_enum", create_constraint=False, native_enum=True),
+    subject_type_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("subject_types.subj_type_id", name="fk_playbook_templates_subj_type_id"),
         nullable=False,
     )
     category_key: Mapped[str] = mapped_column(VARCHAR(64), nullable=False)
@@ -146,8 +153,14 @@ class PlaybookTemplates(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
+    subject_type_rel: Mapped["SubjectTypes"] = relationship("SubjectTypes", lazy="joined")
+
+    @property
+    def subject_type(self) -> str:
+        return self.subject_type_rel.subj_type_name if self.subject_type_rel else ""
+
     __table_args__ = (
-        UniqueConstraint("subject_type", "category_key", name="uq_playbook_subject_type_category"),
+        UniqueConstraint("subject_type_id", "category_key", name="uq_playbook_subject_type_category"),
     )
 
 

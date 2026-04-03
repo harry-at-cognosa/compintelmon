@@ -7,6 +7,7 @@ import SubjectDetail from "./pages/SubjectDetail";
 import Settings from "./pages/Settings";
 import GroupSettings from "./pages/GroupSettings";
 import SubjectChat from "./pages/SubjectChat";
+import AdminSubjectTypes from "./pages/AdminSubjectTypes";
 import Logout from "./pages/Logout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -52,6 +53,10 @@ export const Router = createBrowserRouter([
           {
             path: "settings",
             element: <Settings />,
+          },
+          {
+            path: "subject-types",
+            element: <AdminSubjectTypes />,
           },
         ],
       },

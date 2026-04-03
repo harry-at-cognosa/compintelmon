@@ -13,6 +13,7 @@ from backend.api.scheduler import router_scheduler
 from backend.api.dashboard import router_dashboard
 from backend.api.analyses import router_analyses
 from backend.api.conversations import router_conversations
+from backend.api.subject_types import router_subject_types
 
 api_router = APIRouter(prefix=API_URL_PREFIX)
 
@@ -34,3 +35,4 @@ api_router.include_router(router_scheduler)
 api_router.include_router(router_dashboard)
 api_router.include_router(router_analyses, tags=["Analyses"])
 api_router.include_router(router_conversations, tags=["Conversations"])
+api_router.include_router(router_subject_types, tags=["Subject Types"])

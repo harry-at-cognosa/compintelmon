@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db.session import async_get_session
 from backend.db.models import User
 from backend.db.schemas import (
-    PlaybookTemplateRead,
+    PlaybookTemplateRead, PlaybookTemplateCreate, PlaybookTemplateUpdate, PlaybookTemplateClone,
     SubjectSourceRead, SubjectSourceCreate, SubjectSourceUpdate,
     SubjectSourceRunRead, CollectResponse, CollectAllResponse,
     DiscoverResponse,
@@ -49,6 +49,53 @@ async def list_templates(
     if subject_type:
         return await table.get_by_subject_type(subject_type)
     return await table.get_all()
+
+
+def _require_superuser(user: User):
+    if not user.is_superuser:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superuser required")
+
+
+@router_sources.post("/playbook-templates", response_model=PlaybookTemplateRead, status_code=201)
+async def create_template(
+    payload: PlaybookTemplateCreate,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_superuser(user)
+    return await PlaybookTemplatesTable(session).create_template(**payload.model_dump())
+
+
+@router_sources.put("/playbook-templates/{template_id}", response_model=PlaybookTemplateRead)
+async def update_template(
+    template_id: int,
+    payload: PlaybookTemplateUpdate,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_superuser(user)
+    tpl = await PlaybookTemplatesTable(session).update_template(
+        template_id, **payload.model_dump(exclude_unset=True)
+    )
+    if tpl is None:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return tpl
+
+
+@router_sources.post("/playbook-templates/{template_id}/clone", response_model=PlaybookTemplateRead, status_code=201)
+async def clone_template(
+    template_id: int,
+    payload: PlaybookTemplateClone,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_superuser(user)
+    clone = await PlaybookTemplatesTable(session).clone_template(
+        template_id, payload.target_subject_type_id, payload.new_category_key
+    )
+    if clone is None:
+        raise HTTPException(status_code=404, detail="Source template not found")
+    return clone
 
 
 # ── Subject Sources ───────────────────────────────────────────
