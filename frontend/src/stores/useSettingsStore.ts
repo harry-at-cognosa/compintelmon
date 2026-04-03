@@ -6,6 +6,10 @@ interface SettingsState {
   app_title: string;
   navbar_color: string;
   instance_label: string;
+  dashboard_title: string;
+  dashboard_top: string;
+  sw_ver: string;
+  db_ver: string;
   loaded: boolean;
   fetchSettings: () => Promise<void>;
 }
@@ -22,6 +26,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   app_title: "CompIntel Monitor",
   navbar_color: "slate",
   instance_label: "DEV",
+  dashboard_title: "",
+  dashboard_top: "",
+  sw_ver: "",
+  db_ver: "",
   loaded: false,
   fetchSettings: async () => {
     try {
@@ -36,6 +44,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
           app_title: map.app_title || "CompIntel Monitor",
           navbar_color: color,
           instance_label: map.instance_label || "",
+          dashboard_title: map.dashboard_title || "",
+          dashboard_top: map.dashboard_top || "",
+          sw_ver: map.sw_ver || "",
+          db_ver: map.db_ver || "",
           loaded: true,
         });
       }

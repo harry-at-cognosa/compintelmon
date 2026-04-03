@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Container, Row, Col, Card, Table, Badge, Button, Spinner } from "react-bootstrap";
 import axiosClient from "../api/axiosClient";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 interface DashboardStats {
   total_subjects: number;
@@ -48,6 +49,7 @@ function statusBadge(status: string) {
 
 export default function Dashboard() {
   const { user_name, group_name, is_superuser } = useAuthStore();
+  const { dashboard_title, dashboard_top, sw_ver, db_ver } = useSettingsStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [runs, setRuns] = useState<RecentRun[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,10 +113,18 @@ export default function Dashboard() {
 
   return (
     <Container className="py-4">
-      <h3>Dashboard</h3>
-      <p className="text-muted">
-        Welcome, <strong>{user_name}</strong> ({group_name})
-      </p>
+      {/* Dashboard banner */}
+      <div className="rounded mb-4 overflow-hidden">
+        <div className="bg-tc-400 px-3 py-2">
+          <h4 className="mb-0 text-tc-50">{dashboard_title || "Dashboard"}</h4>
+        </div>
+        <div className="bg-tc-100 px-3 py-2">
+          <div>{dashboard_top || `Welcome, ${user_name} (${group_name})`}</div>
+          {(sw_ver || db_ver) && (
+            <small className="text-muted">{[sw_ver, db_ver].filter(Boolean).join(" · ")}</small>
+          )}
+        </div>
+      </div>
 
       <Row className="mb-4">
         <Col md={3}>

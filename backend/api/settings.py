@@ -27,9 +27,9 @@ def _require_groupadmin_or_above(user: User):
 async def webapp_options(
     session: AsyncSession = Depends(async_get_session),
 ):
-    """Public endpoint for frontend theming (app_title, navbar_color, instance_label)."""
+    """Public endpoint for frontend theming and dashboard display."""
     return await ApiSettingsTable(session).get_by_names(
-        ["app_title", "navbar_color", "instance_label"]
+        ["app_title", "navbar_color", "instance_label", "dashboard_title", "dashboard_top", "sw_ver", "db_ver"]
     )
 
 
