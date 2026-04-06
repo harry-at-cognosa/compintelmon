@@ -423,7 +423,7 @@ def _product_templates() -> list[dict]:
         {
             "subject_type_id": T, "category_key": "product_hunt", "category_name": "Product Hunt",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 1440,
-            "collection_tool": "httpx", "priority": 12,
+            "collection_tool": "api", "priority": 12,
             "description": "Monitor Product Hunt for launches and community discussion.",
             "signal_instructions": "Monitor Product Hunt for new launches, updates, and community discussion. A competitor PH launch is a high-priority signal.",
             "user_inputs_schema": {"type": "object", "properties": {"product_hunt_slug": {"type": "string", "title": "Product Hunt Slug"}}},
@@ -588,7 +588,7 @@ def _topic_templates() -> list[dict]:
         {
             "subject_type_id": T, "category_key": "topic_research", "category_name": "Research Papers",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
-            "collection_tool": "httpx", "priority": 5,
+            "collection_tool": "api", "priority": 5,
             "description": "Search arXiv, Google Scholar for emerging research.",
             "signal_instructions": "Search arXiv, Google Scholar, SSRN for papers related to the topic. Track academic research, emerging technologies, market research reports.",
             "user_inputs_schema": {"type": "object", "properties": {"arxiv_terms": {"type": "array", "items": {"type": "string"}, "title": "arXiv Search Terms"}, "scholar_terms": {"type": "array", "items": {"type": "string"}, "title": "Scholar Search Terms"}}},
@@ -597,7 +597,7 @@ def _topic_templates() -> list[dict]:
         {
             "subject_type_id": T, "category_key": "topic_regulatory", "category_name": "Regulatory & Policy",
             "category_group": "regulatory", "default_enabled": False, "default_frequency_minutes": 1440,
-            "collection_tool": "httpx", "priority": 6,
+            "collection_tool": "api", "priority": 6,
             "description": "Monitor government sites for policy changes and enforcement actions.",
             "signal_instructions": "Monitor government websites, Federal Register, EU regulatory sites for policy changes, proposed rules, and enforcement actions.",
             "user_inputs_schema": {"type": "object", "properties": {"regulatory_terms": {"type": "array", "items": {"type": "string"}, "title": "Search Terms"}, "agency_domains": {"type": "array", "items": {"type": "string"}, "title": "Agency Domains"}}},
@@ -615,7 +615,7 @@ def _topic_templates() -> list[dict]:
         {
             "subject_type_id": T, "category_key": "topic_github", "category_name": "GitHub / OSS Activity",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 1440,
-            "collection_tool": "httpx", "priority": 8,
+            "collection_tool": "api", "priority": 8,
             "description": "Search GitHub for trending repos and activity spikes.",
             "signal_instructions": "Search GitHub for trending repos, new projects, activity spikes. Track stars, forks, new repo creation velocity.",
             "user_inputs_schema": {"type": "object", "properties": {"github_search_terms": {"type": "array", "items": {"type": "string"}, "title": "GitHub Search Terms"}}},
@@ -624,7 +624,7 @@ def _topic_templates() -> list[dict]:
         {
             "subject_type_id": T, "category_key": "topic_hacker_news", "category_name": "Hacker News",
             "category_group": "community", "default_enabled": False, "default_frequency_minutes": 120,
-            "collection_tool": "httpx", "priority": 9,
+            "collection_tool": "api", "priority": 9,
             "description": "Leading indicator for tech trends and developer sentiment.",
             "signal_instructions": "Search Hacker News (Algolia API) for topic-related submissions and comments. HN is a leading indicator for tech trends.",
             "user_inputs_schema": {"type": "object", "properties": {"hn_search_terms": {"type": "array", "items": {"type": "string"}, "title": "HN Search Terms"}}},
@@ -633,7 +633,7 @@ def _topic_templates() -> list[dict]:
         {
             "subject_type_id": T, "category_key": "topic_wikipedia", "category_name": "Wikipedia Changes",
             "category_group": "web", "default_enabled": False, "default_frequency_minutes": 1440,
-            "collection_tool": "httpx", "priority": 10,
+            "collection_tool": "api", "priority": 10,
             "description": "Monitor Wikipedia pages for edits and evolving definitions.",
             "signal_instructions": "Monitor specific Wikipedia pages for edits. Evolving definitions, controversies, market perception.",
             "user_inputs_schema": {"type": "object", "properties": {"wikipedia_pages": {"type": "array", "items": {"type": "string"}, "title": "Wikipedia Page Titles"}}},

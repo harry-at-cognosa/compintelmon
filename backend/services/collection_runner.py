@@ -25,6 +25,7 @@ import backend.collectors.httpx_collector  # noqa: F401
 import backend.collectors.feedparser_collector  # noqa: F401
 import backend.collectors.crawl4ai_collector  # noqa: F401
 import backend.collectors.praw_collector  # noqa: F401
+import backend.collectors.api_collector  # noqa: F401
 
 from backend.services.logger_service import get_logger
 
