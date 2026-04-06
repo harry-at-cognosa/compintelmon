@@ -24,6 +24,7 @@ interface Source {
   enabled: boolean;
   frequency_minutes: number;
   collection_tool: string;
+  collection_config: Record<string, unknown>;
   last_status: string;
   last_collected_at: string | null;
   last_status_text: string;
@@ -489,8 +490,11 @@ export default function SubjectDetail() {
                         custom
                       </Badge>
                     )}
-                    {Object.values(s.user_inputs || {}).some((v) => v) ? (
-                      <CheckCircleFill className="ms-2 text-success" size={12} title="URLs configured" />
+                    {Object.values(s.user_inputs || {}).some((v) => v) ||
+                     s.collection_tool === "praw" ||
+                     s.collection_tool === "api" ||
+                     (s.collection_config && "search_template" in s.collection_config) ? (
+                      <CheckCircleFill className="ms-2 text-success" size={12} title="Configured" />
                     ) : (
                       <small className="ms-2 text-warning" title="No URLs configured yet">needs config</small>
                     )}
