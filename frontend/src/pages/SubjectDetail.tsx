@@ -145,6 +145,8 @@ export default function SubjectDetail() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   const [collecting, setCollecting] = useState(false);
+  const [collectProgress, setCollectProgress] = useState("");
+  const collectPollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [discovering, setDiscovering] = useState(false);
   const discoverPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [collectingSources, setCollectingSources] = useState<Set<number>>(new Set());
@@ -158,7 +160,6 @@ export default function SubjectDetail() {
   const [expandedReport, setExpandedReport] = useState<number | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const analyzePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const auth = useAuthStore();
   const canManage = auth.is_subjectmanager || auth.is_groupadmin || auth.is_superuser;
 
@@ -185,22 +186,12 @@ export default function SubjectDetail() {
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
-  // Polling: refresh sources while any are running
+  // Clean up collection polling on unmount
   useEffect(() => {
-    const hasRunning = sources.some(
-      (s) => s.last_status === "running" || collectingSources.size > 0
-    );
-    if (hasRunning && !pollRef.current) {
-      pollRef.current = setInterval(fetchSources, 3000);
-    } else if (!hasRunning && pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-      setCollectingSources(new Set());
-    }
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (collectPollRef.current) clearTimeout(collectPollRef.current);
     };
-  }, [sources, collectingSources, fetchSources]);
+  }, []);
 
   const toggleSource = async (source: Source) => {
     if (!canManage) return;
@@ -234,15 +225,42 @@ export default function SubjectDetail() {
 
   const collectAll = async () => {
     setCollecting(true);
+    const enabledCount = sources.filter((s) => s.enabled).length;
+    setCollectProgress(`Collection running: 0 of ${enabledCount} complete`);
     try {
       await axiosClient.post(`/subjects/${id}/collect-all`);
       const enabledIds = new Set(sources.filter((s) => s.enabled).map((s) => s.source_id));
       setCollectingSources(enabledIds);
-      setTimeout(fetchSources, 1000);
+
+      // Poll with setTimeout chaining
+      const pollCollect = async () => {
+        try {
+          const resp = await axiosClient.get(`/subjects/${id}/sources`);
+          const updatedSources: Source[] = resp.data;
+          setSources(updatedSources);
+
+          const enabled = updatedSources.filter((s) => enabledIds.has(s.source_id));
+          const done = enabled.filter((s) => s.last_status !== "pending" && s.last_status !== "running").length;
+          setCollectProgress(`Collection running: ${done} of ${enabledCount} complete`);
+
+          if (done < enabledCount) {
+            collectPollRef.current = setTimeout(pollCollect, 2000);
+          } else {
+            setCollecting(false);
+            setCollectingSources(new Set());
+            setCollectProgress(`Collection complete: ${done} of ${enabledCount} sources`);
+            setTimeout(() => setCollectProgress(""), 10000);
+          }
+        } catch {
+          setCollecting(false);
+          setCollectingSources(new Set());
+          setCollectProgress("");
+        }
+      };
+      collectPollRef.current = setTimeout(pollCollect, 2000);
     } catch {
-      // handle error
-    } finally {
       setCollecting(false);
+      setCollectProgress("");
     }
   };
 
@@ -373,9 +391,9 @@ export default function SubjectDetail() {
           {subject.enabled ? "Enabled" : "Disabled"}
         </Badge>
       </div>
-      {subject.gsubject_status_text && (
+      {(collectProgress || subject.gsubject_status_text) && (
         <p className="text-muted mb-0">
-          <small>{subject.gsubject_status_text}</small>
+          <small>{collectProgress || subject.gsubject_status_text}</small>
         </p>
       )}
 
