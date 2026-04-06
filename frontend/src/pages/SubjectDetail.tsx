@@ -66,6 +66,44 @@ interface Report {
   error_detail: string | null;
 }
 
+function getCategoryGroup(key: string): string {
+  const prefix = key.split("_")[0];
+  const groups: Record<string, string> = {
+    website: "web", product: "web", service: "web",
+    social: "social", topic: "social",
+    news: "news",
+    community: "community", review: "community",
+    regulatory: "regulatory", financial: "financial",
+    web: "web",
+  };
+  return groups[prefix] || "other";
+}
+
+const GROUP_ORDER = ["web", "social", "news", "community", "regulatory", "financial", "other"];
+
+function sortSources(sources: Source[]): Source[] {
+  return [...sources].sort((a, b) => {
+    const ga = GROUP_ORDER.indexOf(getCategoryGroup(a.category_key));
+    const gb = GROUP_ORDER.indexOf(getCategoryGroup(b.category_key));
+    if (ga !== gb) return ga - gb;
+    return a.category_name.localeCompare(b.category_name);
+  });
+}
+
+function getSourceUrl(inputs: Record<string, string>): string {
+  if (!inputs) return "";
+  for (const val of Object.values(inputs)) {
+    if (typeof val === "string" && (val.startsWith("http://") || val.startsWith("https://"))) {
+      try {
+        return new URL(val).hostname.replace("www.", "");
+      } catch {
+        return val;
+      }
+    }
+  }
+  return "";
+}
+
 function formatFrequency(minutes: number): string {
   if (minutes < 60) return `${minutes}m`;
   if (minutes < 1440) return `${Math.round(minutes / 60)}h`;
@@ -422,8 +460,23 @@ export default function SubjectDetail() {
             </tr>
           </thead>
           <tbody>
-            {sources.map((s) => (
+            {(() => {
+              const sorted = sortSources(sources);
+              let lastGroup = "";
+              return sorted.map((s) => {
+                const group = getCategoryGroup(s.category_key);
+                const showGroupHeader = group !== lastGroup;
+                lastGroup = group;
+                const sourceUrl = getSourceUrl(s.user_inputs);
+                return (
               <>
+                {showGroupHeader && (
+                  <tr key={`group-${group}`}>
+                    <td colSpan={canManage ? 7 : 6} className="bg-tc-100 fw-bold text-uppercase" style={{ fontSize: "0.75em", letterSpacing: "0.05em" }}>
+                      {group}
+                    </td>
+                  </tr>
+                )}
                 <tr
                   key={s.source_id}
                   onClick={() => toggleRuns(s.source_id)}
@@ -440,6 +493,12 @@ export default function SubjectDetail() {
                       <CheckCircleFill className="ms-2 text-success" size={12} title="URLs configured" />
                     ) : (
                       <small className="ms-2 text-warning" title="No URLs configured yet">needs config</small>
+                    )}
+                    {sourceUrl && (
+                      <br />
+                    )}
+                    {sourceUrl && (
+                      <small className="text-muted" style={{ fontSize: "0.8em" }}>{sourceUrl}</small>
                     )}
                   </td>
                   <td>
@@ -527,7 +586,9 @@ export default function SubjectDetail() {
                   </td>
                 </tr>
               </>
-            ))}
+                );
+              });
+            })()}
           </tbody>
         </Table>
       )}
