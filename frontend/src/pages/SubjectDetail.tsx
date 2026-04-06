@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Container, Table, Badge, Form, Button, Spinner, Collapse, Card } from "react-bootstrap";
-import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText, ChatDots, Archive, Trash } from "react-bootstrap-icons";
+import { Container, Table, Badge, Form, Button, Spinner, Collapse, Card, Modal } from "react-bootstrap";
+import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText, ChatDots, Archive, Trash, GearFill } from "react-bootstrap-icons";
 import Markdown from "react-markdown";
 import axiosClient from "../api/axiosClient";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -163,6 +163,9 @@ export default function SubjectDetail() {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [showArchivedAnalyses, setShowArchivedAnalyses] = useState(false);
   const [showArchivedReports, setShowArchivedReports] = useState(false);
+  const [configSource, setConfigSource] = useState<Source | null>(null);
+  const [configInputs, setConfigInputs] = useState<Record<string, string>>({});
+  const [savingConfig, setSavingConfig] = useState(false);
   const analyzePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const auth = useAuthStore();
   const canManage = auth.is_subjectmanager || auth.is_groupadmin || auth.is_superuser;
@@ -321,6 +324,52 @@ export default function SubjectDetail() {
     if (!window.confirm("Permanently delete all archived reports?")) return;
     await axiosClient.delete(`/subjects/${id}/reports/archived`);
     fetchAnalysesAndReports();
+  };
+
+  const openConfigModal = (source: Source) => {
+    setConfigSource(source);
+    // Parse existing user_inputs or initialize empty
+    const inputs: Record<string, string> = {};
+    const config = source.collection_config || {};
+    const urlTemplate = (config.url_template as string) || "";
+    // Extract placeholder names from url_template like {website_url}
+    const matches = urlTemplate.match(/\{(\w+)\}/g) || [];
+    for (const m of matches) {
+      const key = m.replace(/[{}]/g, "");
+      inputs[key] = (source.user_inputs || {})[key] || "";
+    }
+    // Also include any existing user_inputs keys not in template
+    for (const [k, v] of Object.entries(source.user_inputs || {})) {
+      if (!(k in inputs)) {
+        inputs[k] = typeof v === "string" ? v : JSON.stringify(v);
+      }
+    }
+    // If no fields found, add a generic url field
+    if (Object.keys(inputs).length === 0) {
+      inputs["url"] = "";
+    }
+    setConfigInputs(inputs);
+  };
+
+  const saveConfig = async () => {
+    if (!configSource || !id) return;
+    setSavingConfig(true);
+    try {
+      // Filter out empty values
+      const cleaned: Record<string, string> = {};
+      for (const [k, v] of Object.entries(configInputs)) {
+        if (v.trim()) cleaned[k] = v.trim();
+      }
+      await axiosClient.put(`/subjects/${id}/sources/${configSource.source_id}`, {
+        user_inputs: cleaned,
+      });
+      setConfigSource(null);
+      fetchSources();
+    } catch {
+      // handle error
+    } finally {
+      setSavingConfig(false);
+    }
   };
 
   const analyzeSubject = async () => {
@@ -504,7 +553,7 @@ export default function SubjectDetail() {
               <th style={{ width: 90 }}>Status</th>
               <th style={{ width: 100 }}>Last Run</th>
               <th style={{ width: 75 }}>Enabled</th>
-              {canManage && <th style={{ width: 50 }}>Run</th>}
+              {canManage && <th style={{ width: 80 }}></th>}
             </tr>
           </thead>
           <tbody>
@@ -576,6 +625,18 @@ export default function SubjectDetail() {
                   </td>
                   {canManage && (
                     <td>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="me-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openConfigModal(s);
+                        }}
+                        title="Configure source URLs"
+                      >
+                        <GearFill size={12} />
+                      </Button>
                       <Button
                         variant="outline-success"
                         size="sm"
@@ -805,6 +866,34 @@ export default function SubjectDetail() {
           ))}
         </div>
       )}
+      {/* Configure Source Modal */}
+      <Modal show={!!configSource} onHide={() => setConfigSource(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Configure: {configSource?.category_name}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-muted" style={{ fontSize: "0.85em" }}>
+            Enter the URL(s) for this source. The collection tool ({configSource?.collection_tool}) will use these to fetch data.
+          </p>
+          {Object.entries(configInputs).map(([key, value]) => (
+            <Form.Group key={key} className="mb-3">
+              <Form.Label>{key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</Form.Label>
+              <Form.Control
+                type="text"
+                value={value}
+                onChange={(e) => setConfigInputs({ ...configInputs, [key]: e.target.value })}
+                placeholder={key.includes("url") ? "https://..." : "Enter value..."}
+              />
+            </Form.Group>
+          ))}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setConfigSource(null)}>Cancel</Button>
+          <Button variant="primary" onClick={saveConfig} disabled={savingConfig}>
+            {savingConfig ? "Saving..." : "Save"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }
