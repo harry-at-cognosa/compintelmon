@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Table, Badge, Form, Button, Spinner, Collapse, Card, Modal } from "react-bootstrap";
-import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText, ChatDots, Archive, Trash, GearFill } from "react-bootstrap-icons";
+import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText, ChatDots, Archive, Trash, GearFill, PlusCircle } from "react-bootstrap-icons";
 import Markdown from "react-markdown";
 import axiosClient from "../api/axiosClient";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -166,6 +166,13 @@ export default function SubjectDetail() {
   const [configSource, setConfigSource] = useState<Source | null>(null);
   const [configInputs, setConfigInputs] = useState<Record<string, string>>({});
   const [savingConfig, setSavingConfig] = useState(false);
+  const [showAddSource, setShowAddSource] = useState(false);
+  const [newSource, setNewSource] = useState({
+    category_key: "", category_name: "", category_group: "web",
+    collection_tool: "crawl4ai", frequency_minutes: 1440, url: "",
+    signal_instructions: "", add_to_playbook: false,
+  });
+  const [savingNewSource, setSavingNewSource] = useState(false);
   const analyzePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const auth = useAuthStore();
   const canManage = auth.is_subjectmanager || auth.is_groupadmin || auth.is_superuser;
@@ -372,6 +379,85 @@ export default function SubjectDetail() {
     }
   };
 
+  const saveNewSource = async () => {
+    if (!id || !subject) return;
+    setSavingNewSource(true);
+    try {
+      // Build collection_config based on tool
+      const collConfig: Record<string, unknown> = { tool: newSource.collection_tool };
+      const userInputs: Record<string, string> = {};
+
+      if (newSource.url && ["crawl4ai", "httpx", "feedparser"].includes(newSource.collection_tool)) {
+        const urlKey = newSource.category_key.replace(/[^a-z0-9_]/g, "") + "_url";
+        collConfig.url_template = `{${urlKey}}`;
+        collConfig.timeout_seconds = 30;
+        if (newSource.collection_tool === "crawl4ai") {
+          collConfig.extract_mode = "markdown";
+        }
+        userInputs[urlKey] = newSource.url;
+      }
+
+      // Create the source on this subject
+      await axiosClient.post(`/subjects/${id}/sources`, {
+        category_key: newSource.category_key,
+        category_name: newSource.category_name,
+        collection_tool: newSource.collection_tool,
+        frequency_minutes: newSource.frequency_minutes,
+        collection_config: collConfig,
+        signal_instructions: newSource.signal_instructions,
+        user_inputs: userInputs,
+        enabled: true,
+      });
+
+      // Optionally add to playbook template
+      if (newSource.add_to_playbook && subject) {
+        try {
+          // Look up the subject_type_id
+          const typesResp = await axiosClient.get("/subject-types");
+          const subjectType = typesResp.data.find(
+            (t: { subj_type_name: string }) => t.subj_type_name === subject.gsubject_type
+          );
+          if (subjectType) {
+            await axiosClient.post("/playbook-templates", {
+              subject_type_id: subjectType.subj_type_id,
+              category_key: newSource.category_key,
+              category_name: newSource.category_name,
+              category_group: newSource.category_group,
+              collection_tool: newSource.collection_tool,
+              default_frequency_minutes: newSource.frequency_minutes,
+              collection_config: collConfig,
+              signal_instructions: newSource.signal_instructions,
+              user_inputs_schema: newSource.url ? {
+                type: "object",
+                properties: {
+                  [newSource.category_key.replace(/[^a-z0-9_]/g, "") + "_url"]: {
+                    type: "string", format: "uri",
+                    title: `${newSource.category_name} URL`,
+                  },
+                },
+              } : {},
+              default_enabled: false,
+            });
+          }
+        } catch {
+          // Template creation failed — source still created on subject
+        }
+      }
+
+      setShowAddSource(false);
+      setNewSource({
+        category_key: "", category_name: "", category_group: "web",
+        collection_tool: "crawl4ai", frequency_minutes: 1440, url: "",
+        signal_instructions: "", add_to_playbook: false,
+      });
+      fetchSources();
+    } catch {
+      // handle error
+    } finally {
+      setSavingNewSource(false);
+    }
+  };
+
   const analyzeSubject = async () => {
     setAnalyzing(true);
     try {
@@ -536,6 +622,16 @@ export default function SubjectDetail() {
             >
               <ChatDots className="me-1" />
               Chat
+            </Button>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="ms-2"
+              onClick={() => setShowAddSource(true)}
+              title="Add a custom source to this subject"
+            >
+              <PlusCircle className="me-1" />
+              Add Source
             </Button>
           </>
         )}
@@ -866,6 +962,59 @@ export default function SubjectDetail() {
           ))}
         </div>
       )}
+      {/* Add Source Modal */}
+      <Modal show={showAddSource} onHide={() => setShowAddSource(false)} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Add Custom Source</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group className="mb-2">
+            <Form.Label>Category Key <small className="text-muted">(lowercase, underscores, unique)</small></Form.Label>
+            <Form.Control value={newSource.category_key} onChange={(e) => setNewSource({ ...newSource, category_key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })} placeholder="e.g., company_events" />
+          </Form.Group>
+          <Form.Group className="mb-2">
+            <Form.Label>Display Name</Form.Label>
+            <Form.Control value={newSource.category_name} onChange={(e) => setNewSource({ ...newSource, category_name: e.target.value })} placeholder="e.g., Upcoming Events" />
+          </Form.Group>
+          <Form.Group className="mb-2">
+            <Form.Label>Category Group</Form.Label>
+            <Form.Select value={newSource.category_group} onChange={(e) => setNewSource({ ...newSource, category_group: e.target.value })}>
+              {["web", "social", "news", "community", "regulatory", "financial"].map((g) => <option key={g} value={g}>{g}</option>)}
+            </Form.Select>
+          </Form.Group>
+          <Form.Group className="mb-2">
+            <Form.Label>Collection Tool</Form.Label>
+            <Form.Select value={newSource.collection_tool} onChange={(e) => setNewSource({ ...newSource, collection_tool: e.target.value })}>
+              {["crawl4ai", "feedparser", "httpx", "api", "praw"].map((t) => <option key={t} value={t}>{t}</option>)}
+            </Form.Select>
+          </Form.Group>
+          <Form.Group className="mb-2">
+            <Form.Label>URL</Form.Label>
+            <Form.Control value={newSource.url} onChange={(e) => setNewSource({ ...newSource, url: e.target.value })} placeholder="https://..." />
+          </Form.Group>
+          <Form.Group className="mb-2">
+            <Form.Label>Frequency (minutes)</Form.Label>
+            <Form.Control type="number" value={newSource.frequency_minutes} onChange={(e) => setNewSource({ ...newSource, frequency_minutes: parseInt(e.target.value) || 1440 })} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Signal Instructions <small className="text-muted">(what to look for when analyzing)</small></Form.Label>
+            <Form.Control as="textarea" rows={2} value={newSource.signal_instructions} onChange={(e) => setNewSource({ ...newSource, signal_instructions: e.target.value })} placeholder="e.g., Monitor for upcoming trade shows, conferences, and industry events..." />
+          </Form.Group>
+          <Form.Check
+            type="switch"
+            label={`Also add as a playbook template for all "${subject?.gsubject_type}" subjects`}
+            checked={newSource.add_to_playbook}
+            onChange={(e) => setNewSource({ ...newSource, add_to_playbook: e.target.checked })}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAddSource(false)}>Cancel</Button>
+          <Button variant="primary" onClick={saveNewSource} disabled={savingNewSource || !newSource.category_key || !newSource.category_name}>
+            {savingNewSource ? "Saving..." : "Add Source"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       {/* Configure Source Modal */}
       <Modal show={!!configSource} onHide={() => setConfigSource(null)} centered>
         <Modal.Header closeButton>
