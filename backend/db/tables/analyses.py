@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import Analyses
@@ -23,12 +23,12 @@ class AnalysesTable:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_subject(self, gsubject_id: int, limit: int = 10) -> Sequence[Analyses]:
+    async def get_by_subject(self, gsubject_id: int, limit: int = 10, include_archived: bool = False) -> Sequence[Analyses]:
+        query = select(Analyses).where(Analyses.gsubject_id == gsubject_id)
+        if not include_archived:
+            query = query.where(Analyses.archived == False)
         result = await self.session.execute(
-            select(Analyses)
-            .where(Analyses.gsubject_id == gsubject_id)
-            .order_by(Analyses.created_at.desc())
-            .limit(limit)
+            query.order_by(Analyses.created_at.desc()).limit(limit)
         )
         return result.scalars().all()
 
@@ -42,3 +42,21 @@ class AnalysesTable:
         await self.session.commit()
         await self.session.refresh(analysis)
         return analysis
+
+    async def archive(self, analysis_id: int) -> bool:
+        analysis = await self.get_by_id(analysis_id)
+        if analysis is None:
+            return False
+        analysis.archived = True
+        await self.session.commit()
+        return True
+
+    async def delete_archived(self, gsubject_id: int) -> int:
+        result = await self.session.execute(
+            delete(Analyses).where(
+                Analyses.gsubject_id == gsubject_id,
+                Analyses.archived == True,
+            )
+        )
+        await self.session.commit()
+        return result.rowcount

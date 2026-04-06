@@ -243,6 +243,7 @@ class Analyses(Base):
     sources_analyzed: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
     status: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'pending'"))
     error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("'FALSE'"))
 
     subject: Mapped["GroupSubjects"] = relationship("GroupSubjects")
 
@@ -271,6 +272,7 @@ class Reports(Base):
     content_markdown: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     status: Mapped[str] = mapped_column(VARCHAR(32), nullable=False, server_default=text("'pending'"))
     error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("'FALSE'"))
 
     analysis: Mapped["Analyses"] = relationship("Analyses")
     subject: Mapped["GroupSubjects"] = relationship("GroupSubjects")

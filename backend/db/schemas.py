@@ -391,6 +391,7 @@ class AnalysisRead(BaseModel):
     sources_analyzed: list
     status: str
     error_detail: str | None
+    archived: bool = False
 
     class Config:
         from_attributes = True
@@ -415,6 +416,7 @@ class ReportRead(BaseModel):
     content_markdown: str
     status: str
     error_detail: str | None
+    archived: bool = False
 
     class Config:
         from_attributes = True

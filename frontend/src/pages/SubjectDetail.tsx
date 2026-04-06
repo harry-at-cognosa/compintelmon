@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Table, Badge, Form, Button, Spinner, Collapse, Card } from "react-bootstrap";
-import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText, ChatDots } from "react-bootstrap-icons";
+import { ArrowLeft, PlayCircle, CollectionPlay, Search, CheckCircleFill, BarChart, FileText, ChatDots, Archive, Trash } from "react-bootstrap-icons";
 import Markdown from "react-markdown";
 import axiosClient from "../api/axiosClient";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -53,6 +53,7 @@ interface Analysis {
   sources_analyzed: string[];
   status: string;
   error_detail: string | null;
+  archived: boolean;
 }
 
 interface Report {
@@ -65,6 +66,7 @@ interface Report {
   content_markdown: string;
   status: string;
   error_detail: string | null;
+  archived: boolean;
 }
 
 function getCategoryGroup(key: string): string {
@@ -159,6 +161,8 @@ export default function SubjectDetail() {
   const [reports, setReports] = useState<Report[]>([]);
   const [expandedReport, setExpandedReport] = useState<number | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [showArchivedAnalyses, setShowArchivedAnalyses] = useState(false);
+  const [showArchivedReports, setShowArchivedReports] = useState(false);
   const analyzePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const auth = useAuthStore();
   const canManage = auth.is_subjectmanager || auth.is_groupadmin || auth.is_superuser;
@@ -290,8 +294,33 @@ export default function SubjectDetail() {
 
   const fetchAnalysesAndReports = () => {
     if (!id) return;
-    axiosClient.get(`/subjects/${id}/analyses?limit=5`).then((res) => setAnalyses(res.data)).catch(() => {});
-    axiosClient.get(`/subjects/${id}/reports?limit=5`).then((res) => setReports(res.data)).catch(() => {});
+    axiosClient.get(`/subjects/${id}/analyses?limit=10&include_archived=${showArchivedAnalyses}`).then((res) => setAnalyses(res.data)).catch(() => {});
+    axiosClient.get(`/subjects/${id}/reports?limit=10&include_archived=${showArchivedReports}`).then((res) => setReports(res.data)).catch(() => {});
+  };
+
+  // Refetch when archive toggles change
+  useEffect(() => { fetchAnalysesAndReports(); }, [showArchivedAnalyses, showArchivedReports]);
+
+  const archiveAnalysis = async (analysisId: number) => {
+    await axiosClient.post(`/subjects/${id}/analyses/${analysisId}/archive`);
+    fetchAnalysesAndReports();
+  };
+
+  const deleteArchivedAnalyses = async () => {
+    if (!window.confirm("Permanently delete all archived analyses?")) return;
+    await axiosClient.delete(`/subjects/${id}/analyses/archived`);
+    fetchAnalysesAndReports();
+  };
+
+  const archiveReport = async (reportId: number) => {
+    await axiosClient.post(`/subjects/${id}/reports/${reportId}/archive`);
+    fetchAnalysesAndReports();
+  };
+
+  const deleteArchivedReports = async () => {
+    if (!window.confirm("Permanently delete all archived reports?")) return;
+    await axiosClient.delete(`/subjects/${id}/reports/archived`);
+    fetchAnalysesAndReports();
   };
 
   const analyzeSubject = async () => {
@@ -616,11 +645,21 @@ export default function SubjectDetail() {
       )}
 
       {/* ── Analyses Section ── */}
-      <h5 className="mt-5 mb-3">
-        <BarChart className="me-2" />
-        Analyses
-        <small className="text-muted ms-2">({analyses.length})</small>
-      </h5>
+      <div className="d-flex align-items-center mt-5 mb-3">
+        <h5 className="mb-0">
+          <BarChart className="me-2" />
+          Analyses
+          <small className="text-muted ms-2">({analyses.length})</small>
+        </h5>
+        {canManage && (
+          <div className="ms-auto d-flex align-items-center gap-2">
+            <Form.Check type="switch" label="Show archived" checked={showArchivedAnalyses} onChange={(e) => setShowArchivedAnalyses(e.target.checked)} style={{ fontSize: "0.85em" }} />
+            {showArchivedAnalyses && analyses.some((a) => a.archived) && (
+              <Button variant="outline-danger" size="sm" onClick={deleteArchivedAnalyses} title="Permanently delete archived analyses"><Trash size={12} className="me-1" />Delete archived</Button>
+            )}
+          </div>
+        )}
+      </div>
 
       {analyses.length === 0 ? (
         <p className="text-muted">No analyses yet. Click "Analyze" to extract intelligence from collected data.</p>
@@ -652,6 +691,10 @@ export default function SubjectDetail() {
                       {generatingReport ? <Spinner size="sm" /> : <><FileText size={14} className="me-1" />Generate Report</>}
                     </Button>
                   )}
+                  {canManage && !a.archived && (
+                    <Button variant="outline-secondary" size="sm" className="ms-1" onClick={(e) => { e.stopPropagation(); archiveAnalysis(a.analysis_id); }} title="Archive"><Archive size={14} /></Button>
+                  )}
+                  {a.archived && <Badge bg="secondary" className="ms-2">archived</Badge>}
                 </div>
                 {a.summary && <p className="mt-2 mb-0 text-muted" style={{ fontSize: "0.9em" }}>{a.summary.substring(0, 200)}...</p>}
               </Card.Body>
@@ -706,11 +749,21 @@ export default function SubjectDetail() {
       )}
 
       {/* ── Reports Section ── */}
-      <h5 className="mt-5 mb-3">
-        <FileText className="me-2" />
-        Reports
-        <small className="text-muted ms-2">({reports.length})</small>
-      </h5>
+      <div className="d-flex align-items-center mt-5 mb-3">
+        <h5 className="mb-0">
+          <FileText className="me-2" />
+          Reports
+          <small className="text-muted ms-2">({reports.length})</small>
+        </h5>
+        {canManage && (
+          <div className="ms-auto d-flex align-items-center gap-2">
+            <Form.Check type="switch" label="Show archived" checked={showArchivedReports} onChange={(e) => setShowArchivedReports(e.target.checked)} style={{ fontSize: "0.85em" }} />
+            {showArchivedReports && reports.some((r) => r.archived) && (
+              <Button variant="outline-danger" size="sm" onClick={deleteArchivedReports} title="Permanently delete archived reports"><Trash size={12} className="me-1" />Delete archived</Button>
+            )}
+          </div>
+        )}
+      </div>
 
       {reports.length === 0 ? (
         <p className="text-muted">No reports yet. Generate a report from an analysis above.</p>
@@ -727,8 +780,12 @@ export default function SubjectDetail() {
                     <strong>{r.title || `Report #${r.report_id}`}</strong>
                     <Badge bg="secondary" className="ms-2">{r.report_type}</Badge>
                     <span className="ms-2">{statusBadge(r.status)}</span>
+                    {r.archived && <Badge bg="secondary" className="ms-2">archived</Badge>}
                     <small className="ms-2 text-muted">{formatRelativeTime(r.created_at)}</small>
                   </div>
+                  {canManage && !r.archived && (
+                    <Button variant="outline-secondary" size="sm" onClick={(e) => { e.stopPropagation(); archiveReport(r.report_id); }} title="Archive"><Archive size={14} /></Button>
+                  )}
                 </div>
               </Card.Body>
               <Collapse in={expandedReport === r.report_id}>

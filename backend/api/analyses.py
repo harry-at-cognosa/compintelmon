@@ -57,11 +57,12 @@ async def analyze_subject(
 async def list_analyses(
     gsubject_id: int,
     limit: int = Query(10, ge=1, le=50),
+    include_archived: bool = Query(False),
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(async_get_session),
 ):
     await _get_subject_or_404(session, gsubject_id, user)
-    return await AnalysesTable(session).get_by_subject(gsubject_id, limit=limit)
+    return await AnalysesTable(session).get_by_subject(gsubject_id, limit=limit, include_archived=include_archived)
 
 
 @router_analyses.get("/subjects/{gsubject_id}/analyses/{analysis_id}", response_model=AnalysisRead)
@@ -110,15 +111,41 @@ async def generate_report(
     return GenerateReportResponse(report_id=0, status="started", message="Report generation started")
 
 
+@router_analyses.post("/subjects/{gsubject_id}/analyses/{analysis_id}/archive", status_code=204)
+async def archive_analysis(
+    gsubject_id: int,
+    analysis_id: int,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_subjectmanager_or_above(user)
+    await _get_subject_or_404(session, gsubject_id, user)
+    ok = await AnalysesTable(session).archive(analysis_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+
+@router_analyses.delete("/subjects/{gsubject_id}/analyses/archived", status_code=204)
+async def delete_archived_analyses(
+    gsubject_id: int,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_subjectmanager_or_above(user)
+    await _get_subject_or_404(session, gsubject_id, user)
+    await AnalysesTable(session).delete_archived(gsubject_id)
+
+
 @router_analyses.get("/subjects/{gsubject_id}/reports", response_model=list[ReportRead])
 async def list_reports(
     gsubject_id: int,
     limit: int = Query(10, ge=1, le=50),
+    include_archived: bool = Query(False),
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(async_get_session),
 ):
     await _get_subject_or_404(session, gsubject_id, user)
-    return await ReportsTable(session).get_by_subject(gsubject_id, limit=limit)
+    return await ReportsTable(session).get_by_subject(gsubject_id, limit=limit, include_archived=include_archived)
 
 
 @router_analyses.get("/subjects/{gsubject_id}/reports/{report_id}", response_model=ReportRead)
@@ -133,3 +160,28 @@ async def get_report(
     if report is None or report.gsubject_id != gsubject_id:
         raise HTTPException(status_code=404, detail="Report not found")
     return report
+
+
+@router_analyses.post("/subjects/{gsubject_id}/reports/{report_id}/archive", status_code=204)
+async def archive_report(
+    gsubject_id: int,
+    report_id: int,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_subjectmanager_or_above(user)
+    await _get_subject_or_404(session, gsubject_id, user)
+    ok = await ReportsTable(session).archive(report_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+
+@router_analyses.delete("/subjects/{gsubject_id}/reports/archived", status_code=204)
+async def delete_archived_reports(
+    gsubject_id: int,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(async_get_session),
+):
+    _require_subjectmanager_or_above(user)
+    await _get_subject_or_404(session, gsubject_id, user)
+    await ReportsTable(session).delete_archived(gsubject_id)
